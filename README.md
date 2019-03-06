@@ -21,8 +21,8 @@ Hope you enjoy Medusa as much as I do. Any feedback please feel free to contact 
 Medusa runs in a command-line interface.
 
 <ul>
-<li>Install Node.Js from <a href="https://nodejs.org/en/download/">here</a></li>
-<li>Download medusa-chess from GitHub using the link on top of the page</li>
+<li>Install Node.Js from <a href="https://nodejs.org/en/download/">here</a>.</li>
+<li>Download medusa-chess from GitHub using the link on top of the page.</li>
 <li>Install all dependencies via npm:</li>
 </ul>
 
