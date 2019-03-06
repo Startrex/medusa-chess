@@ -1,6 +1,6 @@
 # Medusa Chess
 
-A free Node.js interface tool for Bluetooth electronic boards and chess engines powered by the UCI (Universal Chess Interface) protocol.
+A free Node.js interface tool for Bluetooth electronic boards and chess engines powered by the UCI protocol.
 
 ## Description
 
@@ -10,7 +10,7 @@ Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now abl
 
 Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a 'middle-man' between the UCI engine and the board.
 
-And if that's not enough, we have powered Medusa with voice feedback. So we can hear what our engine has to say like a human player. We can hear the engine moves, score, and all the necessary information.
+And if that's not enough, we have powered Medusa with voice feedback. So we can hear what our engine has to say like a human player. The engine is able to talk about their moves, score, and all the necessary information.
 
 The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true!
 
