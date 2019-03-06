@@ -97,5 +97,11 @@ Support for different boards, new features, fixing bugs and pull requests are we
 
 Thanks.
 
+## Acknowledgment
+
+Thank you to all who have contributed in this great project.
+
+Sampled voices by IBM Watson.
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
