@@ -4,15 +4,15 @@ A free Node.js interface tool for Bluetooth electronic boards and chess engines 
 
 ## Description
 
-Usually we are only able to use electronic chess boards to play against a built-in engine, or connecting to specific sites. What if we could use an electronic board to play against a local chess engine installed in our PC? Now this is possible!
+Usually we are only able to use electronic chess boards to play against a built-in engine, or connecting to specific sites. What if we could use an electronic board to play against a local chess engine installed on our PC? Now this is possible!
 
 Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now able to play against any engine using our electronic board.
 
-Basically all we have to do is to install Medusa and a chess engine. Medusa will act as an 'middle-man' between the UCI engine and the board.
+Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a 'middle-man' between the UCI engine and the board.
 
 And if that's not enough, we have powered Medusa with voice feedback. So we can hear what our engine has to say like a human player. We can hear the engine moves, score, and all the necessary information.
 
-The combination of a magical electronic board like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true!
+The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true!
 
 Hope you enjoy Medusa as much as I do. Any feedback please feel free to contact me on Discord as zandora#5443.
 
