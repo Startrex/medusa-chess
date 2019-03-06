@@ -18,7 +18,7 @@ Hope you enjoy Medusa as much as I do. Any feedback please feel free to contact 
 
 ## Installation
 
-Medusa runs on a command-line interface.
+Medusa runs in a command-line interface.
 
 <ul>
 <li>Install Node.Js from <a href="https://nodejs.org/en/download/">here</a></li>
