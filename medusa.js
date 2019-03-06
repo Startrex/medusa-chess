@@ -264,8 +264,8 @@ async function main() {
 				sendBoard('RSTVAR')
 				if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
 				console.log('Choose colours by clicking twice on your king\'s initial square to start a new game.')
+				timing = timing + 1000
 				if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { 
-					timing = timing + 1000
 					setTimeout(() => { playText("draw") }, timing) 
 					setTimeout(() => { playText("choose-colours") }, timing + 1750)
 				} else { 
