@@ -40,19 +40,19 @@ npm install noble
 
 Depending on your system environment and the tools installed, **nobble** may or may not work out of the box. Please visit <a href="https://github.com/sandeepmistry/noble">https://github.com/sandeepmistry/noble</a> on how to install all the prerequisites for noble.
 
-Getting bluetooth to work is the most difficult part, but it should not be an issue if you follow the instructions and/or you get the appropriate hardware. As my native laptop's bluetooth adapter was not supported by noble, I got a <a href="https://www.amazon.co.uk/Bluetooth-Yeung-Qee-Compatible-computers-black-1/dp/B07F67Q2KV/ref=sr_1_1?ie=UTF8&qid=1551884488&sr=8-1&keywords=CSR8510+A10+bluetooth+adapter">cheap dongle</a> from Amazon. 
+Getting bluetooth to work is the most difficult part, but it should not be an issue if you follow the instructions and/or you get the appropriate hardware. As my native laptop's bluetooth adapter was not supported by noble, I just got this <a href="https://www.amazon.co.uk/Bluetooth-Yeung-Qee-Compatible-computers-black-1/dp/B07F67Q2KV/ref=sr_1_1?ie=UTF8&qid=1551884488&sr=8-1&keywords=CSR8510+A10+bluetooth+adapter">cheap dongle</a> from Amazon, and it worked perfectly!
 
 ## Configuration
 
-Edit configuration text file **medusa.config**. 
+Configuration can be changed by editing the simple text file **medusa.config**. 
 
-Sections are separated by [], and commented lines start with a ';'. We have 4 main sections:
+Sections are separated by '[ ]', and commented lines start with a ';'. We have 4 main sections:
 
 <ul>
-<li>Engine:			enter the full absolute path to the installed engine.</li>
-<li>Moves:			select how moves are to be calculated by engine (UCI 'go' command). Choose either desired depth, nodes or movetime.</li>
-<li>UCI_options:	select options that can be loaded by UCI command 'option'. Check engine documentation for what's available.</li>
-<li>PGN:			configure how .pgn files (games) will be created. Other fields can also be inserted (ELO, Round, etc).</li>
+<li>Engine: enter the full absolute path to the installed engine.</li>
+<li>Moves: select how moves are to be calculated by engine (UCI 'go' command). Choose either desired depth, nodes or movetime.</li>
+<li>UCI_options: select options that can be loaded by UCI command 'option'. Check engine documentation for what's available.</li>
+<li>PGN: configure how .pgn files (games) will be created. Other fields can also be inserted (ELO, Round, etc).</li>
 </ul>
 
 ```
@@ -81,10 +81,10 @@ Player = 'Human player'
 ## Usage
 
 ```bash
-node medusa 		# Starts the basic interface
+node medusa         # Starts the basic interface
 node medusa --help  # Show command-line usage and options
 node medusa --voice # Activates engine voice
-node medusa --save	# Save games in the pgn folder
+node medusa --save  # Save games in the pgn folder
 ```
 
 ## Support
