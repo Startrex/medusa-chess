@@ -22,7 +22,7 @@ Medusa runs on a command-line interface.
 
 <ul>
 <li>Install Node.Js from <a href="https://nodejs.org/en/download/">here</a></li>
-<li>Download medusa-chess from GitHub using the link above</li>
+<li>Download medusa-chess from GitHub using the link on top of the page</li>
 <li>Install all dependencies via npm:</li>
 </ul>
 
@@ -44,7 +44,7 @@ Getting bluetooth to work is the most difficult part, but it should not be an is
 
 ## Configuration
 
-Configuration can be changed by editing the simple text file **medusa.config**. 
+Configuration can be changed by editing the file **medusa.config**. 
 
 Sections are separated by '[ ]', and commented lines start with a ';'. We have 4 main sections:
 
