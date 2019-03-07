@@ -166,17 +166,19 @@ async function main() {
 		var engine_name = engine.id.name
 		var c = 0
 		await engine.isready() 
-		while (typeof config.uci_options.option[c] !== 'undefined') { // parse engine options
-			console.log('Loading option '+config.uci_options.option[c])
-			var name = config.uci_options.option[c].split(' ')[1]
-			var value = ''
-			for (i=0; i < (config.uci_options.option[c].split(' ').length - 3); i++) {
-				value = value + config.uci_options.option[c].split(' ')[(i+3)] + ' '
+		if (typeof config.uci_options.option != 'undefined') {
+			while (typeof config.uci_options.option[c] !== 'undefined') { // parse engine options
+				console.log('Loading option '+config.uci_options.option[c])
+				var name = config.uci_options.option[c].split(' ')[1]
+				var value = ''
+				for (i=0; i < (config.uci_options.option[c].split(' ').length - 3); i++) {
+					value = value + config.uci_options.option[c].split(' ')[(i+3)] + ' '
+				}
+				if (program.debug) { console.log('option name ' + name + ' value ' + value + 'sent to engine') }
+				try { await engine.setoption(name, value) } catch(error) { console.log('[WARNING] setoption command failed') }
+				await engine.isready()
+				c++
 			}
-			if (program.debug) { console.log('option name ' + name + ' value ' + value + 'sent to engine') }
-			try { await engine.setoption(name, value) } catch(error) { console.log('[WARNING] setoption command failed') }
-			await engine.isready()
-			c++
 		}
 		var go = {} // move settings
 		if (typeof config.moves.depth !== 'undefined') {
