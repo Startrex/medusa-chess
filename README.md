@@ -72,7 +72,7 @@ movetime = 2000
 
 [uci_options]
 ;check engine documentation for available options
-option[] = name Threads value 4
+;option[] = name Threads value 4
 
 [pgn]
 Event = 'Casual Game'
