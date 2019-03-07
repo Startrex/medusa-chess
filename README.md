@@ -16,6 +16,8 @@ The combination of a magical smart board where pieces move by themselves like Sq
 
 Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess</a> channel on Discord.
 
+Note: Medusa currently only supports Square Off board, and should work with any UCI chess engine - tested with Leela Chess Zero and Stockfish.
+
 ## Installation
 
 Medusa runs in a command-line interface.
