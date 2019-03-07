@@ -12,7 +12,7 @@ Basically all we have to do is to install Medusa and a chess engine. Medusa will
 
 And if that's not enough, we have powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information.
 
-The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true!
+The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true.
 
 Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess</a> channel on Discord.
 
@@ -83,7 +83,7 @@ Player = 'Human player'
 ## Usage
 
 ```bash
-node medusa         # Starts the basic interface
+node medusa         # Starts the basic interface - switch the board on before firing up medusa
 node medusa --help  # Show command-line usage and options
 node medusa --voice # Activates engine voice
 node medusa --save  # Save games in the pgn folder
@@ -91,11 +91,11 @@ node medusa --save  # Save games in the pgn folder
 
 ## Support
 
-This software is provided without warranty of any kind. In case, you can contact me on Discord as zandora#5443.
+You can reach me on Discord as zandora#5443.
 
 ## Contributing
 
-Support for different boards, new features, fixing bugs and pull requests are welcome! For major changes, please open an issue first to discuss.
+Support for different boards, new features, fixing bugs and pull requests are welcome. For major changes, please open an issue first to discuss.
 
 Thanks.
 
