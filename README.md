@@ -38,6 +38,8 @@ npm install chess.js
 npm install audio-play
 npm install audio-loader
 npm install noble
+npm install express
+npm install socket.io
 ```
 
 Depending on your system environment and the tools installed, **nobble** may or may not work out of the box. Please visit <a href="https://github.com/sandeepmistry/noble">https://github.com/sandeepmistry/noble</a> on how to install all the prerequisites for noble.
@@ -83,10 +85,11 @@ Player = 'Human player'
 ## Usage
 
 ```bash
-node medusa         # Starts the basic interface - switch the board on before firing up medusa
-node medusa --help  # Show command-line usage and options
-node medusa --voice # Activates engine voice
-node medusa --save  # Save games in the pgn folder
+node medusa               # Start the basic interface - switch the board on before firing up medusa
+node medusa --help        # Show command-line usage and options
+node medusa --voice       # Activate engine voice
+node medusa --voice-score # Activate engine voice with score information 
+node medusa --save        # Save games in the pgn folder
 ```
 
 ## Support
