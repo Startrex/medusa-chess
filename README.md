@@ -89,7 +89,7 @@ node medusa               # Start the basic interface - switch the board on befo
 node medusa --help        # Show command-line usage and options
 node medusa --voice       # Activate engine voice
 node medusa --voice-score # Activate engine voice with score information 
-node medusa --web         # Enable realtime webpage on **http://localhost:3000/chessboard/medusa.html**
+node medusa --web         # Enable realtime webpage on 'http://localhost:3000/chessboard/medusa.html'
 node medusa --save        # Save games in the pgn folder
 ```
 
