@@ -11,9 +11,14 @@ const ini = require('ini')
 const noble = require('noble')
 const Engine = require('node-uci').Engine
 const Chess = require('chess.js').Chess
-const readline = require('readline');
-const play = require('audio-play');
-const load = require('audio-loader');
+const readline = require('readline')
+const play = require('audio-play')
+const load = require('audio-loader')
+const express = require('express')
+const app = express()
+const router = express.Router()
+const http = require('http').Server(app)
+const io = require('socket.io')(http);
 
 var chess = new Chess()
 
@@ -21,8 +26,10 @@ var pgn_file = ''
 
 program
   .version('1.0.0')
-  .option('-s, --save', 'Save games')
+  .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
+  .option('-c, --voice-score', 'Activate engine voice with score information')
+  .option('-w, --web', 'Enable real-time webpage')
   .option('-d, --debug', 'Debug (developers only)')
   .parse(process.argv)
 
@@ -67,7 +74,7 @@ async function main() {
 		characteristic_N.on('data', async function(data) { // Notification from board is received
 			var board_received = data.toString('utf8').trim()
 			if (program.debug) { console.log('[debug] ' + board_received+' received from board') }
-			if (board_received == 'e1e1') { // new game as white
+			if (board_received == 'e1e1') { // new game as white 
 				sendBoard('RSTVAR')
 				sendBoard('GAMEWHITE')
 				chess.reset()
@@ -77,6 +84,9 @@ async function main() {
 				playText("ok")
 				setTimeout(() => { playText("I-play-black") }, 1000); 
 				setTimeout(() => { playText("good-luck") }, 2250); 
+				webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
+				webPGNUpdate('')
+				webTurnUpdate('black to play')
 			} else if (board_received == 'e8e8') { // new game as black
 					sendBoard('RSTVAR')
 					sendBoard('GAMEBLACK')
@@ -87,6 +97,9 @@ async function main() {
 					playText("ok")
 					setTimeout(() => { playText("I-play-white") }, 1000); 
 					setTimeout(() => { playText("good-luck") }, 2250); 
+					webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
+					webPGNUpdate('')
+					webTurnUpdate('white to play')
 					await engine.position(chess.fen())
 					engineTurn()
 			} else {
@@ -118,6 +131,8 @@ async function main() {
 					if ((human_colour == 'black') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
 					if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
 					pgnSave(pgn_file)
+					if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
+					webPGNUpdate(chess.pgn())
 					console.log('Human played ' + san)
 					if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
 						EOG_messages()
@@ -128,7 +143,9 @@ async function main() {
 						setTimeout(() => { playText("choose-colours") }, 1750); 
 						chess.reset()
 						if (human_colour == 'white') { pgnReset(true) } else { pgnReset(false) }
+						webTurnUpdate('')
 					} else {
+						if (human_colour == 'white') { webTurnUpdate('black to play') } else { webTurnUpdate('white to play') }
 						await engine.position(chess.fen()) // update position for engine
 						engineTurn()
 					}
@@ -199,14 +216,22 @@ async function main() {
 		console.log('Play time!')
 		console.log('Human is playing white, engine is playing black')
 		playText("introduction-2")
-	
+		if (program.web) {
+			app.use('/favicon.ico', express.static('/favicon.png'));
+			app.use(express.static(__dirname));
+			router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
+			http.listen(3000, function(){ 
+				console.log('Real-time webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
+			}) // nothing else should be coded after this
+		}		
+
 		// end of initialization
 		
 		// support functions
 		
 		function sendBoard(comm) {
 			var data = new Buffer.from('x'+comm+'z')
-			if (program.debug) { console.log('[debug] ' + data+' sent to board') }
+			if (program.debug) { console.log('[debug] ' + data + ' sent to board') }
 			characteristic_WWR.write(data, false, function(err) {
 				if (err) { 
 					console.log('[ERROR] Board connection failed')
@@ -245,6 +270,8 @@ async function main() {
 			if ((human_colour == 'black') && (chess.in_checkmate())) {chess.header('Result', '1-0') }
 			if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
 			pgnSave(pgn_file)
+			if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
+			webPGNUpdate(chess.pgn())
 			// check score
 			if (score_unit == 'cp') { console.log('Engine played ' + san + ' with a score of ' + score_value) }
 			if (score_unit == 'mate') { console.log('Engine played ' + san + ' and announced mate in ' + score_value) }
@@ -258,7 +285,9 @@ async function main() {
 			if (chess.history().length == 1 ) { timing = 3500 }
 			timing = playMove(san, timing)
 			if (!(chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition())) {
-				if (score_unit == 'cp') { timing = playScore(score_value, timing) } 
+				if (score_unit == 'cp') { 
+					if (program.voiceScore) { timing = playScore(score_value, timing) }
+				} 
 				if (score_unit == 'mate') { timing = playMate(score_value, timing) }
 			}
 			if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
@@ -275,7 +304,9 @@ async function main() {
 				}
 				chess.reset()
 				if (human_colour == 'white') { pgnReset(true) } else { pgnReset(false) }
+				webTurnUpdate('')
 			} else {
+				if (human_colour == 'white') { webTurnUpdate('white to play') } else { webTurnUpdate('black to play') }
 				console.log('Waiting for human...')
 			}
 		}
@@ -290,33 +321,52 @@ async function main() {
 			}
 		}
 		
+		function webBoardUpdate(data) {
+			if (program.web) {
+				io.emit('server-to-client-board-data', data)
+				if (program.debug) { console.log('[debug] Board data sent to client') }
+			}
+		}
+		function webPGNUpdate(data) {
+			if (program.web) {
+				io.emit('server-to-client-pgn-data', data)
+				if (program.debug) { console.log('[debug] PGN data sent to client') }
+			}
+		}
+		function webTurnUpdate(data) {
+			if (program.web) {
+				io.emit('server-to-client-turn-data', data)
+				if (program.debug) { console.log('[debug] Turn data sent to client') }
+			}
+		}
+		
 		function pgnReset(player_is_white) {
-			if (program.save) {
-				var pgn_player = '?'
-				var pgn_event = '?'
-				var pgn_site = '?'
-				if (typeof config.pgn.Event !== 'undefined') { // pgn settings
-					console.log('Loading pgn setting event = '+config.pgn.Event)
-					pgn_event = config.pgn.Event
-				}
-				if (typeof config.pgn.Site !== 'undefined') {
-					console.log('Loading pgn setting site = '+config.pgn.Site)
-					pgn_site = config.pgn.Site
-				}
-				if (typeof config.pgn.Player !== 'undefined') {
-					console.log('Loading pgn setting player = '+config.pgn.Player)
-					pgn_player = config.pgn.Player
-				}
-				chess.header('Event', pgn_event)
-				chess.header('Site', pgn_site)
-				chess.header('Date',getDateTime().substr(0,10))
-				if (player_is_white) {
-					chess.header('White', pgn_player)
-					chess.header('Black', engine.id.name) 
-				} else {
-					chess.header('White', engine.id.name)
-					chess.header('Black', pgn_player) 
-				}
+			var pgn_player = '?'
+			var pgn_event = '?'
+			var pgn_site = '?'
+			if (typeof config.pgn.Event !== 'undefined') { // pgn settings
+				console.log('Loading pgn setting event = '+config.pgn.Event)
+				pgn_event = config.pgn.Event
+			}
+			if (typeof config.pgn.Site !== 'undefined') {
+				console.log('Loading pgn setting site = '+config.pgn.Site)
+				pgn_site = config.pgn.Site
+			}
+			if (typeof config.pgn.Player !== 'undefined') {
+				console.log('Loading pgn setting player = '+config.pgn.Player)
+				pgn_player = config.pgn.Player
+			} else {
+				pgn_player = 'Human player'
+			}
+			chess.header('Event', pgn_event)
+			chess.header('Site', pgn_site)
+			chess.header('Date',getDateTime().substr(0,10))
+			if (player_is_white) {
+				chess.header('White', pgn_player)
+				chess.header('Black', engine.id.name) 
+			} else {
+				chess.header('White', engine.id.name)
+				chess.header('Black', pgn_player) 
 			}
 		}
 		
@@ -355,11 +405,11 @@ async function main() {
 		}
 		
 		function playText(text) {
-			if (program.voice) { load('./audio/'+text+'.mp3').then(play) }	
+			if (program.voice || program.voiceScore) { load('./audio/'+text+'.mp3').then(play) }	
 		}
 		
 		function playMove(trans, timing) {
-			if (program.voice) { 
+			if (program.voice || program.voiceScore) { 
 				if (trans.indexOf("O-O-O") != -1) { // castling
 					playText("O-O-O") 
 					if (trans.indexOf("+") != -1) { setTimeout(() => { playText("+") }, timing+1750) } 
@@ -424,47 +474,46 @@ async function main() {
 		}
 	
 		function playScore(trans, timing) {
-			if (program.voice) { 
-				timing = timing + 500
-				setTimeout(() => { playText("score") }, timing); 
-				setTimeout(() => { playText("=") }, timing+750); 
-				var t = timing + 1500
-				var ti = 750
-				var c = 0
-				var p1 = trans.substr(c,1)
-				setTimeout(() => { playText(p1) }, t)
-				t = t + ti
-				c++
-				if (c == trans.length) return t
-				var p2 = trans.substr(c,1)
-				setTimeout(() => { playText(p2) }, t)
-				t = t + ti
-				c++
-				if (c == trans.length) return t
-				var p3 = trans.substr(c,1)
-				setTimeout(() => { playText(p3) }, t)
-				t = t + ti
-				c++
-				if (c == trans.length) return t
-				var p4 = trans.substr(c,1)
-				setTimeout(() => { playText(p4) }, t)
-				t = t + ti
-				c++
-				if (c == trans.length) return t
-				var p5 = trans.substr(c,1)
-				setTimeout(() => { playText(p5) }, t)
-				t = t + ti
-				c++
-				if (c == trans.length) return t
-				var p6 = trans.substr(c,1)
-				setTimeout(() => { playText(p6) }, t)
-				t = t + ti
-				return t
-			}
+			timing = timing + 500
+			setTimeout(() => { playText("score") }, timing); 
+			setTimeout(() => { playText("=") }, timing+750); 
+			var t = timing + 1500
+			//var t = timing + 750
+			var ti = 750
+			var c = 0
+			var p1 = trans.substr(c,1)
+			setTimeout(() => { playText(p1) }, t)
+			t = t + ti
+			c++
+			if (c == trans.length) return t
+			var p2 = trans.substr(c,1)
+			setTimeout(() => { playText(p2) }, t)
+			t = t + ti
+			c++
+			if (c == trans.length) return t
+			var p3 = trans.substr(c,1)
+			setTimeout(() => { playText(p3) }, t)
+			t = t + ti
+			c++
+			if (c == trans.length) return t
+			var p4 = trans.substr(c,1)
+			setTimeout(() => { playText(p4) }, t)
+			t = t + ti
+			c++
+			if (c == trans.length) return t
+			var p5 = trans.substr(c,1)
+			setTimeout(() => { playText(p5) }, t)
+			t = t + ti
+			c++
+			if (c == trans.length) return t
+			var p6 = trans.substr(c,1)
+			setTimeout(() => { playText(p6) }, t)
+			t = t + ti
+			return t
 		}
 		
 		function playMate(trans, timing) {
-			if (program.voice) { 
+			if (program.voice || program.voiceScore) { 
 				timing = timing + 250
 				setTimeout(() => { playText("mate") }, timing); 
 				var t = timing + 1250
@@ -481,6 +530,11 @@ async function main() {
 				return t
 			}
 		}
+		
+		io.on('connection', function(socket){
+			if (program.debug) { console.log('[debug] Client connection received') }
+			socket.on('client-to-server-data', function (data) { }) // not used
+		})
 		
 	} catch(err) { 
 		console.log('[ERROR] ' + err) 

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<html>
+    <head>
+    	<meta charset="utf-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>Medusa Chess</title>
+        <link rel="shortcut icon" href="/favicon.png">
+        <link rel="stylesheet" href="/chessboard/css/bootstrap.min.css"></link>
+        <link rel="stylesheet" href="/chessboard/css/chessboard-0.3.0.min.css"></link>
+    	<script src="/socket.io/socket.io.js"></script>
+    	<script src="/chessboard/js/jquery-3.3.1.min.js"></script>
+        <script src="/chessboard/js/chessboard-0.3.0.min.js"></script>
+    </head>
+    <body>
+    	<main role="main" class="container text-center">
+    		<h1>Medusa Chess</h1>
+    		<div class="container" id="board" style="width: 320px"></div>
+    		<p class="turn">white to play</p>
+    		<p class="lead"></p>
+    	</main>
+        <script>
+        	// initial configuration
+            var cfg = {
+            	orientation: 'white',
+            	position: 'start',
+            	showNotation: false
+            };
+            var board = ChessBoard('board', cfg);
+        	var socket = io();
+        	//socket.emit('client-to-server-data', { }); // not used
+            socket.on('server-to-client-board-data', function (data) {
+            		console.log('[debug] Received board data: ' + JSON.stringify(data))
+            		var cfg = data
+            		var board = ChessBoard('board', cfg)	
+            });
+            socket.on('server-to-client-pgn-data', function (data) {
+            		console.log('[debug] Received pgn data: ' + JSON.stringify(data))
+            		$( "p.lead" ).text(data)
+            });
+            socket.on('server-to-client-turn-data', function (data) {
+            		console.log('[debug] Received turn data: ' + JSON.stringify(data))
+            		$( "p.turn" ).text(data)
+            });
+        </script>
+    </body>
+</html>
