@@ -29,7 +29,7 @@ program
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
-  .option('-w, --web', 'Enable real-time webpage')
+  .option('-w, --web', 'Enable realtime webpage')
   .option('-d, --debug', 'Debug (developers only)')
   .parse(process.argv)
 
