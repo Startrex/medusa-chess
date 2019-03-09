@@ -10,7 +10,7 @@ Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now abl
 
 Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a 'middle-man' between the UCI engine and the board.
 
-And if that's not enough, we have powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information.
+And if that's not enough, we have powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information. Also, we have the option to follow up a game in realtime in a graphic board on a local webpage, and stream it to the world if we want to!
 
 The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true.
 
@@ -89,6 +89,7 @@ node medusa               # Start the basic interface - switch the board on befo
 node medusa --help        # Show command-line usage and options
 node medusa --voice       # Activate engine voice
 node medusa --voice-score # Activate engine voice with score information 
+node medusa --web         # Enable realtime webpage on **http://localhost:3000/chessboard/medusa.html**
 node medusa --save        # Save games in the pgn folder
 ```
 
