@@ -14,7 +14,7 @@ And if that's not enough, we have powered Medusa with voice feedback. So we can 
 
 The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true.
 
-Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess</a> channel on Discord.
+Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess channel</a> on Discord.
 
 Note: Medusa currently only supports Square Off board, and should work with any UCI chess engine - tested with Leela Chess Zero and Stockfish.
 
