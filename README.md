@@ -1,6 +1,6 @@
 # Medusa Chess
 
-A free Node.js interface tool for Bluetooth electronic boards and chess engines powered by the UCI protocol.
+Medusa is a free Node.js interface tool for Bluetooth electronic boards and chess engines powered by the UCI protocol.
 
 ## Description
 
