@@ -8,7 +8,7 @@ Usually we are only able to use electronic chess boards to play against a built-
 
 Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now able to play against any engine using the electronic board.
 
-Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a 'middle-man' between the UCI engine and the board.
+Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a middleman between the UCI engine and the board.
 
 And if that's not enough, we have powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information. Also, we have the option to follow up a game in realtime in a graphic board on a local webpage, and stream it to the world if we want to!
 
