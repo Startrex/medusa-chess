@@ -25,7 +25,7 @@ var chess = new Chess()
 var pgn_file = ''
 
 program
-  .version('1.1.0')
+  .version('1.1.1')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -281,26 +281,26 @@ async function main() {
 			else if (human_colour == 'white' && san == 'O-O-O') { sendBoard('a8d8') }
 			else if (human_colour == 'black' && san == 'O-O') { sendBoard('h1f1') }
 			else if (human_colour == 'black' && san == 'O-O-O') { sendBoard('a1d1') }
-			timing = 0
-			if (chess.history().length == 1 ) { timing = 3500 }
-			timing = playMove(san, timing)
+			timer = 0
+			if (chess.history().length == 1 ) { timer = 3500 }
+			timer = playMove(san, timer)
 			if (!(chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition())) {
 				if (score_unit == 'cp') { 
-					if (program.voiceScore) { timing = playScore(score_value, timing) }
+					if (program.voiceScore) { timer = playScore(score_value, timer) }
 				} 
-				if (score_unit == 'mate') { timing = playMate(score_value, timing) }
+				if (score_unit == 'mate') { timer = playMate(score_value, timer) }
 			}
 			if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
 				EOG_messages()
 				sendBoard('RSTVAR')
 				if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
 				console.log('Choose colours by clicking twice on your king\'s initial square to start a new game.')
-				timing = timing + 1000
+				timer = timer + 1000
 				if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { 
-					setTimeout(() => { playText("draw") }, timing) 
-					setTimeout(() => { playText("choose-colours") }, timing + 1750)
+					setTimeout(() => { playText("draw") }, timer) 
+					setTimeout(() => { playText("choose-colours") }, timer + 1750)
 				} else { 
-					setTimeout(() => { playText("choose-colours") }, timing) 
+					setTimeout(() => { playText("choose-colours") }, timer) 
 				}
 				chess.reset()
 				if (human_colour == 'white') { pgnReset(true) } else { pgnReset(false) }
@@ -408,19 +408,19 @@ async function main() {
 			if (program.voice || program.voiceScore) { load('./audio/'+text+'.mp3').then(play) }	
 		}
 		
-		function playMove(trans, timing) {
+		function playMove(trans, timer) {
 			if (program.voice || program.voiceScore) { 
 				if (trans.indexOf("O-O-O") != -1) { // castling
 					playText("O-O-O") 
-					if (trans.indexOf("+") != -1) { setTimeout(() => { playText("+") }, timing+1750) } 
+					if (trans.indexOf("+") != -1) { setTimeout(() => { playText("+") }, timer+1750) } 
 					return 2500
 				} else if (trans.indexOf("O-O") != -1) { 
 					playText("O-O") 
-					if (trans.indexOf("+") != -1) { setTimeout(() => { playText("+") }, timing+1750) } 
+					if (trans.indexOf("+") != -1) { setTimeout(() => { playText("+") }, timer+1750) } 
 					return 2500
 				}
 				// 6 characters max; piece translation only on 1st, 4st or 6st characters...
-				var t = timing
+				var t = timer
 				var ti = 750
 				var c = 0
 				var p1 = trans.substr(c,1)
@@ -473,12 +473,12 @@ async function main() {
 			}
 		}
 	
-		function playScore(trans, timing) {
-			timing = timing + 500
-			setTimeout(() => { playText("score") }, timing); 
-			setTimeout(() => { playText("=") }, timing+750); 
-			var t = timing + 1500
-			//var t = timing + 750
+		function playScore(trans, timer) {
+			timer = timer + 500
+			setTimeout(() => { playText("score") }, timer); 
+			setTimeout(() => { playText("=") }, timer+750); 
+			var t = timer + 1500
+			//var t = timer + 750
 			var ti = 750
 			var c = 0
 			var p1 = trans.substr(c,1)
@@ -512,11 +512,11 @@ async function main() {
 			return t
 		}
 		
-		function playMate(trans, timing) {
+		function playMate(trans, timer) {
 			if (program.voice || program.voiceScore) { 
-				timing = timing + 250
-				setTimeout(() => { playText("mate") }, timing); 
-				var t = timing + 1250
+				timer = timer + 250
+				setTimeout(() => { playText("mate") }, timer); 
+				var t = timer + 1250
 				var ti = 750
 				var c = 0
 				var p1 = trans.substr(c,1)
