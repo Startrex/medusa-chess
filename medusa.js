@@ -25,7 +25,7 @@ var chess = new Chess()
 var pgn_file = ''
 
 program
-  .version('1.2.0')
+  .version('1.3.0')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -176,7 +176,7 @@ async function main() {
 		console.log('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
 		console.log('Using path = '+config.engine['path']) // parse engine path
-		if (typeof config.engine.ccrl !== 'undefined') { console.log('Loading engine information CCRL = '+config.engine.ccrl) } 
+		if (typeof config.engine.elo !== 'undefined') { console.log('Loading engine information Elo = '+config.engine.elo) } 
 		console.log('Starting chess engine...')
 		const engine = new Engine(config.engine['path'])
 		try { await engine.init() } catch(error) { 
@@ -397,17 +397,24 @@ async function main() {
 			chess.header('Event', pgn_event)
 			chess.header('Site', pgn_site)
 			chess.header('Date',getDateTime().substr(0,10))
-			if (typeof config.engine.ccrl !== 'undefined') { // optional
-				engine_name_ccrl = engine.id.name + ' (CCRL 40/4 = ' + config.engine.ccrl + ')'	
-			} else {
-				engine_name_ccrl = engine.id.name	
-			}
 			if (player_is_white) {
 				chess.header('White', pgn_player)
-				chess.header('Black', engine_name_ccrl) 
+				if (typeof config.pgn.PlayerElo !== 'undefined') { 
+					chess.header('WhiteElo', config.pgn.PlayerElo)	
+				}
+				chess.header('Black', engine.id.name)
+				if (typeof config.engine.elo !== 'undefined') { 
+					chess.header('BlackElo', config.engine.elo)	
+				}
 			} else {
-				chess.header('White', engine_name_ccrl)
+				chess.header('White', engine.id.name)
+				if (typeof config.engine.elo !== 'undefined') { 
+					chess.header('WhiteElo', config.engine.elo)	
+				}
 				chess.header('Black', pgn_player) 
+				if (typeof config.pgn.PlayerElo !== 'undefined') { 
+					chess.header('BlackElo', config.pgn.PlayerElo)	
+				}
 			}
 		}
 		
