@@ -25,7 +25,7 @@ var chess = new Chess()
 var pgn_file = ''
 
 program
-  .version('1.1.1')
+  .version('1.2.0')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -70,7 +70,6 @@ noble.on('discover', function(board) {
 async function main() {
 	try {
 		console.log('Connected to board')
-		
 		characteristic_N.on('data', async function(data) { // Notification from board is received
 			var board_received = data.toString('utf8').trim()
 			if (program.debug) { console.log('[debug] ' + board_received+' received from board') }
@@ -87,6 +86,7 @@ async function main() {
 				webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
 				webPGNUpdate('')
 				webTurnUpdate('black to play')
+				move_info_array = []
 			} else if (board_received == 'e8e8') { // new game as black
 					sendBoard('RSTVAR')
 					sendBoard('GAMEBLACK')
@@ -100,6 +100,7 @@ async function main() {
 					webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
 					webPGNUpdate('')
 					webTurnUpdate('white to play')
+					move_info_array = []
 					await engine.position(chess.fen())
 					engineTurn()
 			} else {
@@ -130,9 +131,10 @@ async function main() {
 					if ((human_colour == 'white') && (chess.in_checkmate())) { chess.header('Result', '1-0') }
 					if ((human_colour == 'black') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
 					if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-					pgnSave(pgn_file)
+					var chess_pgn = getChessPGN()					
+					pgnSave(pgn_file, chess_pgn)
+					webPGNUpdate(chess_pgn)
 					if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
-					webPGNUpdate(chess.pgn())
 					console.log('Human played ' + san)
 					if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
 						EOG_messages()
@@ -166,6 +168,7 @@ async function main() {
 		chess.reset()
 		var move = {}
 		var moves = {}
+		var move_info_array = []
 		
 		//UCI
 		
@@ -173,6 +176,7 @@ async function main() {
 		console.log('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
 		console.log('Using path = '+config.engine['path']) // parse engine path
+		if (typeof config.engine.ccrl !== 'undefined') { console.log('Loading engine information CCRL = '+config.engine.ccrl) } 
 		console.log('Starting chess engine...')
 		const engine = new Engine(config.engine['path'])
 		try { await engine.init() } catch(error) { 
@@ -243,22 +247,34 @@ async function main() {
 		async function engineTurn() {
 			console.log('Engine is thinking...')
 			var result = await engine.go(go)
-			var score_value = 0
+			var score_cp_value = 0
+			var score_mate_value = 0
 			var score_unit = ''
+			var depth_value = 0
+			var time_value = 0
 			result.info.forEach(function(row) { // score is captured from last 'depth' info
 				if (row.depth != undefined) {
+					depth_value = row.depth
+					time_value = parseFloat(row.time/1000).toFixed(1)
 					if (row.score.unit == 'cp' ) { 
 						if (human_colour == 'white') {
-							score_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
+							score_cp_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
 						} else {
-							score_value = parseFloat(row.score.value/100).toFixed(2) 
+							score_cp_value = parseFloat(row.score.value/100).toFixed(2) 
 						}
 					}
-					if (row.score.unit == 'mate' ) { score_value = row.score.value }
+					if (row.score.unit == 'mate' ) { score_mate_value = row.score.value }
 					score_unit = row.score.unit
 				}
 			})
+			move_info = ''
+			if (score_unit == 'mate') { 
+				if (score_mate_value != 1) { move_info = '{#' + score_mate_value + '/' + depth_value + ' ' + time_value + 's}' }
+			} else { 
+				move_info = '{' + score_cp_value + '/' + depth_value + ' ' + time_value + 's}' 
+			}
 			if (program.debug) { console.log('[debug] ' + result.bestmove + ' received from engine') }
+			move_info_array.push(move_info)
 			// log move
 			move['from'] = result.bestmove.substr(0,2)
 			move['to'] = result.bestmove.substr(2,2)
@@ -269,12 +285,12 @@ async function main() {
 			if ((human_colour == 'white') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
 			if ((human_colour == 'black') && (chess.in_checkmate())) {chess.header('Result', '1-0') }
 			if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-			pgnSave(pgn_file)
+			var chess_pgn = getChessPGN()
+			pgnSave(pgn_file, chess_pgn)
+			webPGNUpdate(chess_pgn)
 			if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
-			webPGNUpdate(chess.pgn())
 			// check score
-			if (score_unit == 'cp') { console.log('Engine played ' + san + ' with a score of ' + score_value) }
-			if (score_unit == 'mate') { console.log('Engine played ' + san + ' and announced mate in ' + score_value) }
+			if (score_unit == 'cp' || score_unit == 'mate') { console.log('Engine played ' + san + ' ' + move_info) }
 			if (score_unit != 'cp' && score_unit != 'mate') { console.log('Engine played ' + san) }
 			sendBoard(result.bestmove)
 			if (human_colour == 'white' && san == 'O-O') { sendBoard('h8f8') } // castling
@@ -286,9 +302,9 @@ async function main() {
 			timer = playMove(san, timer)
 			if (!(chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition())) {
 				if (score_unit == 'cp') { 
-					if (program.voiceScore) { timer = playScore(score_value, timer) }
+					if (program.voiceScore) { timer = playScore(score_cp_value, timer) }
 				} 
-				if (score_unit == 'mate') { timer = playMate(score_value, timer) }
+				if (score_unit == 'mate') { timer = playMate(score_mate_value, timer) }
 			}
 			if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
 				EOG_messages()
@@ -319,6 +335,26 @@ async function main() {
 					}
 				})
 			}
+		}
+		
+		function getChessPGN() {
+			// insert 'move_info_array' into pgn game
+			var new_pgn = chess.pgn()
+			var nbr_moves = Math.round(chess.history().length/2)
+			for (move_nbr = 1; move_nbr <= nbr_moves; move_nbr++) {
+				if ((human_colour == 'white') && (nbr_moves == chess.history().length/2)) {	// insert into black move
+					var move_str_B = ' ' + chess.history()[move_nbr*2-1]
+					var move_str_W = move_nbr + '. ' + chess.history()[move_nbr*2-2]
+					var i = new_pgn.search(move_nbr + '. ' + chess.history()[move_nbr*2-2] + ' ' + chess.history()[move_nbr*2-1])
+					new_pgn = new_pgn.slice(0, i + move_str_W.length + move_str_B.length) + ' ' + move_info_array[move_nbr-1] + new_pgn.slice(i + move_str_W.length + move_str_B.length)
+				}
+				if ((human_colour == 'black') && (nbr_moves != chess.history().length/2)) {	// insert into white move
+					var move_str_W = move_nbr + '. ' + chess.history()[move_nbr*2-2]
+					var i = new_pgn.search(move_nbr + '. ' + chess.history()[move_nbr*2-2])
+					new_pgn = new_pgn.slice(0, i + move_str_W.length) + ' ' + move_info_array[move_nbr-1] + new_pgn.slice(i + move_str_W.length)
+				}
+			}
+			return new_pgn
 		}
 		
 		function webBoardUpdate(data) {
@@ -361,11 +397,16 @@ async function main() {
 			chess.header('Event', pgn_event)
 			chess.header('Site', pgn_site)
 			chess.header('Date',getDateTime().substr(0,10))
+			if (typeof config.engine.ccrl !== 'undefined') { // optional
+				engine_name_ccrl = engine.id.name + ' (CCRL 40/4 = ' + config.engine.ccrl + ')'	
+			} else {
+				engine_name_ccrl = engine.id.name	
+			}
 			if (player_is_white) {
 				chess.header('White', pgn_player)
-				chess.header('Black', engine.id.name) 
+				chess.header('Black', engine_name_ccrl) 
 			} else {
-				chess.header('White', engine.id.name)
+				chess.header('White', engine_name_ccrl)
 				chess.header('Black', pgn_player) 
 			}
 		}
