@@ -53,7 +53,7 @@ Configuration can be changed by editing the file **medusa.config**.
 Sections are separated by '[ ]', and commented lines start with a ';'. We have 4 main sections:
 
 <ul>
-<li>Engine: enter the full absolute path to the installed engine. Optionally, we can also enter the Elo information. In order to calculate a quick Elo estimate for the configured [moves] settings below, please refer to our Medusa Elo Calculator.</li>
+<li>Engine: enter the full absolute path to the installed engine. Optionally, we can also enter the Elo information. In order to calculate a quick Elo estimate for the configured [moves] settings below, please refer to <a href="https://github.com/zandora/medusa-elo-estimator">Medusa Elo Estimator</a>.</li>
 <li>Moves: select how moves are to be calculated by engine (UCI 'go' command). Choose either desired depth, nodes or movetime.</li>
 <li>UCI_options: select options that can be loaded by UCI command 'option'. Check engine documentation for what's available.</li>
 <li>PGN: configure how .pgn files (games) will be created. Only these basic fields are available, however files will be created with some other details like engine move score, depth, time, etc.</li>
@@ -64,7 +64,7 @@ Sections are separated by '[ ]', and commented lines start with a ';'. We have 4
 
 [engine]
 path = [enter full absolute path folder here]/lc0.exe
-elo = 3200
+;elo = 3200
 ;path = [enter full absolute path folder here]/stockfish_10_x64.exe
 ;elo = 3200
 
