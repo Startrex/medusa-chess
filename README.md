@@ -53,7 +53,7 @@ Configuration can be changed by editing the file **medusa.config**.
 Sections are separated by '[ ]', and commented lines start with a ';'. We have 4 main sections:
 
 <ul>
-<li>Engine: enter the full absolute path to the installed engine. We can also enter the CCRL 40/4 information, refer to <a href="https://sites.google.com/site/strategictestsuite/sts-elo-estimate>STS ELO estimate</a> for details. For accuracy, remember to run evaluation with same settings than the **moves** section below.</li>
+<li>Engine: enter the full absolute path to the installed engine. We can also enter the CCRL 40/4 information, refer to <a href="https://sites.google.com/site/strategictestsuite/sts-elo-estimate">STS ELO estimate</a> for details. For accuracy, remember to run evaluation with same settings than the **moves** section below.</li>
 <li>Moves: select how moves are to be calculated by engine (UCI 'go' command). Choose either desired depth, nodes or movetime.</li>
 <li>UCI_options: select options that can be loaded by UCI command 'option'. Check engine documentation for what's available.</li>
 <li>PGN: configure how .pgn files (games) will be created. Only these basic fields are available, however files will be created with lots of further details like CCRL 40/4 (if configured), score, depth, time, etc.</li>
