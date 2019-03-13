@@ -25,7 +25,7 @@ var chess = new Chess()
 var pgn_file = ''
 
 program
-  .version('1.3.0')
+  .version('1.4.0')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -170,13 +170,18 @@ async function main() {
 		var moves = {}
 		var move_info_array = []
 		
+		var engine_elo = '?'
+		
 		//UCI
 		
 		file = 'medusa.config'
 		console.log('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
 		console.log('Using path = '+config.engine['path']) // parse engine path
-		if (typeof config.engine.elo !== 'undefined') { console.log('Loading engine information Elo = '+config.engine.elo) } 
+		if (typeof config.engine.elo !== 'undefined') { 
+			console.log('Loading engine information elo = '+config.engine.elo) 
+			engine_elo = config.engine.elo
+		} 
 		console.log('Starting chess engine...')
 		const engine = new Engine(config.engine['path'])
 		try { await engine.init() } catch(error) { 
@@ -380,6 +385,7 @@ async function main() {
 			var pgn_player = '?'
 			var pgn_event = '?'
 			var pgn_site = '?'
+			var pgn_player_elo = '?'
 			if (typeof config.pgn.Event !== 'undefined') { // pgn settings
 				console.log('Loading pgn setting event = '+config.pgn.Event)
 				pgn_event = config.pgn.Event
@@ -394,27 +400,23 @@ async function main() {
 			} else {
 				pgn_player = 'Human player'
 			}
+			if (typeof config.pgn.PlayerElo !== 'undefined') {
+				console.log('Loading pgn setting player elo = '+config.pgn.PlayerElo)
+				pgn_player_elo = config.pgn.PlayerElo
+			}
 			chess.header('Event', pgn_event)
 			chess.header('Site', pgn_site)
 			chess.header('Date',getDateTime().substr(0,10))
 			if (player_is_white) {
 				chess.header('White', pgn_player)
-				if (typeof config.pgn.PlayerElo !== 'undefined') { 
-					chess.header('WhiteElo', config.pgn.PlayerElo)	
-				}
+				chess.header('WhiteElo', pgn_player_elo)
 				chess.header('Black', engine.id.name)
-				if (typeof config.engine.elo !== 'undefined') { 
-					chess.header('BlackElo', config.engine.elo)	
-				}
+				chess.header('BlackElo', engine_elo)	
 			} else {
 				chess.header('White', engine.id.name)
-				if (typeof config.engine.elo !== 'undefined') { 
-					chess.header('WhiteElo', config.engine.elo)	
-				}
+				chess.header('WhiteElo', engine_elo)	
 				chess.header('Black', pgn_player) 
-				if (typeof config.pgn.PlayerElo !== 'undefined') { 
-					chess.header('BlackElo', config.pgn.PlayerElo)	
-				}
+				chess.header('BlackElo', pgn_player_elo)	
 			}
 		}
 		
