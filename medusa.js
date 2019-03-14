@@ -25,7 +25,7 @@ var chess = new Chess()
 var pgn_file = ''
 
 program
-  .version('1.4.0')
+  .version('1.4.1')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -262,11 +262,11 @@ async function main() {
 					depth_value = row.depth
 					time_value = parseFloat(row.time/1000).toFixed(1)
 					if (row.score.unit == 'cp' ) { 
-						if (human_colour == 'white') {
-							score_cp_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
-						} else {
+						//if (human_colour == 'white') {
+						//	score_cp_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
+						//} else {
 							score_cp_value = parseFloat(row.score.value/100).toFixed(2) 
-						}
+						//}
 					}
 					if (row.score.unit == 'mate' ) { score_mate_value = row.score.value }
 					score_unit = row.score.unit
