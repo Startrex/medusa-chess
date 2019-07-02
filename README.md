@@ -12,7 +12,7 @@ Basically all we have to do is to install Medusa and a chess engine. Medusa will
 
 We have also powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information. In addition, we have the option to follow up a game in realtime in a graphic board on a local webpage, and even stream it if we want to.
 
-The combination of a magical smart board where pieces move by themselves like Square Off, AI chess engines like Leela Chess Zero, and voice feedback is like a childhood dream coming true.
+So we end up with the magical combination of a smart board where pieces move by themselves like Square Off, and AI chess engines like Leela Chess Zero and naturally pleasant voice talking.
 
 Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess channel</a> on Discord.
 
