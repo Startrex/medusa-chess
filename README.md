@@ -101,7 +101,9 @@ node medusa --save        # Save games in the pgn folder
 There are some runtime commands that can be issued directly from the board. This allows a seamless integration with a 'sound only' interface configuration, so no need to check messages on console. Perfect for a always-on RPI running on the background, so all we have to do is to turn on the board to start playing...
 
 For hints, click twice on your queen's knight initial square.
+
 To toggle vocal score information on/off, click twice on your queen's root initial square. If voice is activated, this enables score information to be announced (or toggled off) in case 'voice-score' was not selected at startup.
+
 To start a new game (and even be able to change colours), click twice on your king's initial square. Remember to play at the other side of the board (do not only swap pieces).
 
 ## Support
