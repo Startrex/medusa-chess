@@ -1,0 +1,22 @@
+square off - kingdom set
+
+wireshark: filter with the following settings (bluetooth msgs):
+btatt.opcode=0x1b (cmds received from SO)
+btatt.opcode=0x52 (cmds sent to SO)
+then: btatt.opcode in {0x1b 0x52}
+
+protocol exchange:
+android/iphone <--> SO
+xCONNECTEDz -->
+xBOARDTYPEz -->
+<-- KDS\r\n35v1\r\n2\r\n
+xBATTERY -->
+<-- 2-91\n*\r\n
+xGAMEWHITE -->
+<-- e2e4\r\n
+xOKz -->
+xe7e5 -->
+...
+xRSTVARz --> (finish game & restart initial position)
+...
+xINVALIDz --> (invalid command received)
