@@ -18,14 +18,14 @@ const express = require('express')
 const app = express()
 const router = express.Router()
 const http = require('http').Server(app)
-const io = require('socket.io')(http);
+const io = require('socket.io')(http)
 
 var chess = new Chess()
 
 var pgn_file = ''
 
 program
-  .version('1.4.1')
+  .version('1.5.0')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -70,6 +70,7 @@ noble.on('discover', function(board) {
 async function main() {
 	try {
 		console.log('Connected to board')
+		noble.startScanning(SERVICE_UUID, false); // In case board is switched off and on, medusa is able to reconnect
 		characteristic_N.on('data', async function(data) { // Notification from board is received
 			var board_received = data.toString('utf8').trim()
 			if (program.debug) { console.log('[debug] ' + board_received+' received from board') }
@@ -88,21 +89,46 @@ async function main() {
 				webTurnUpdate('black to play')
 				move_info_array = []
 			} else if (board_received == 'e8e8') { // new game as black
-					sendBoard('RSTVAR')
-					sendBoard('GAMEBLACK')
-					chess.reset()
-					pgnReset(false) // player is black
-					console.log('Human asked to play black, engine is playing white')
-					human_colour = 'black'
-					playText("ok")
-					setTimeout(() => { playText("I-play-white") }, 1000); 
-					setTimeout(() => { playText("good-luck") }, 2250); 
-					webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
-					webPGNUpdate('')
-					webTurnUpdate('white to play')
-					move_info_array = []
-					await engine.position(chess.fen())
-					engineTurn()
+				sendBoard('RSTVAR')
+				sendBoard('GAMEBLACK')
+				chess.reset()
+				pgnReset(false) // player is black
+				console.log('Human asked to play black, engine is playing white')
+				human_colour = 'black'
+				playText("ok")
+				setTimeout(() => { playText("I-play-white") }, 1000); 
+				setTimeout(() => { playText("good-luck") }, 2250); 
+				webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
+				webPGNUpdate('')
+				webTurnUpdate('white to play')
+				move_info_array = []
+				await engine.position(chess.fen())
+				engineTurn()
+			} else if ((board_received == 'a1a1') || (board_received == 'a8a8')) { // toggle voice score information on/off
+				sendBoard('INVALID')
+				if (voiceScore == 1) {
+					voiceScore = 0
+					console.log('Vocal score information switched off')
+					playText('score-off')
+				} else if (voiceScore == 0) {
+					voiceScore = 1
+					console.log('Vocal score information switched on')
+					playText('score-on')
+				}
+			} else if ((board_received == 'b1b1') || (board_received == 'b8b8')) { // ask for hint
+				sendBoard('INVALID')
+				console.log('Asking for hint...')
+				await engine.position(chess.fen()) // update position for engine
+				var result = await engine.go(go)
+				move['from'] = result.bestmove.substr(0,2)
+				move['to'] = result.bestmove.substr(2,2)
+				var temp_san = chess.move(move)['san']
+				console.log('Hint: ' + temp_san) 
+				if (program.voice || program.voiceScore) { 
+					playText("hint")
+					playMove(temp_san, 1000)
+				}
+				chess.undo()
 			} else {
 				moves['square'] = board_received.substr(0,2) // valid move?
 				legal_moves = chess.moves(moves).toString()
@@ -154,26 +180,22 @@ async function main() {
 				}
 			}
 		})
+		
 		characteristic_N.notify(true, function(error) { } ) // activates notification
 		
-		// initialization after blueetooth is ready
-		
+		// Initialization after blueetooth is ready / board is connected
 		sendBoard('CONNECTED')
 		sendBoard('RSTVAR')
-		sendBoard('GAMEWHITE') // we always start as white
-		var human_colour = 'white'
-		
+		sendBoard('GAMEWHITE') // we always start as white		
 		console.log('Board ready')
-		
 		chess.reset()
+		var human_colour = 'white'
 		var move = {}
 		var moves = {}
 		var move_info_array = []
-		
 		var engine_elo = '?'
-		
+
 		//UCI
-		
 		file = 'medusa.config'
 		console.log('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
@@ -223,20 +245,36 @@ async function main() {
 		pgnReset(true) // player is white
 		console.log('Engine ready')
 		console.log('Play time!')
+		if (program.voice || program.voiceScore) {
+			console.log("To toggle vocal score information on/off, click twice on your queen's root initial square")
+		}
+		if (program.voiceScore) {
+			var voiceScore = 1
+		} else {
+			var voiceScore = 0
+		}
+		console.log("For hints, click twice on your queen's knight initial square")
 		console.log('Human is playing white, engine is playing black')
-		playText("introduction-2")
+		console.log("To change colours, click twice on your king's initial square")
+		console.log("Good luck!")
+		if (engine_name.indexOf('Lc0') > -1) {
+			playText("introduction-lc0") // intro for Lc0
+		} else if (engine_name.indexOf('Stockfish') > -1) {
+			playText("introduction-stockfish") // intro for Stockfish
+		} else {
+			playText("introduction-2") // generic intro for other engines
+		}
 		if (program.web) {
 			app.use('/favicon.ico', express.static('/favicon.png'));
 			app.use(express.static(__dirname));
 			router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
 			http.listen(3000, function(){ 
-				console.log('Real-time webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
+				console.log('Realtime webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
 			}) // nothing else should be coded after this
 		}		
-
-		// end of initialization
+		// End of initialization
 		
-		// support functions
+		// Misc functions
 		
 		function sendBoard(comm) {
 			var data = new Buffer.from('x'+comm+'z')
@@ -261,12 +299,12 @@ async function main() {
 				if (row.depth != undefined) {
 					depth_value = row.depth
 					time_value = parseFloat(row.time/1000).toFixed(1)
-					if (row.score.unit == 'cp' ) { 
-						//if (human_colour == 'white') {
-						//	score_cp_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
-						//} else {
+					if (row.score.unit == 'cp' ) { // score from white's perspective
+						if (human_colour == 'white') {
+							score_cp_value = parseFloat((row.score.value/100)*(-1)).toFixed(2) 
+						} else {
 							score_cp_value = parseFloat(row.score.value/100).toFixed(2) 
-						//}
+						}
 					}
 					if (row.score.unit == 'mate' ) { score_mate_value = row.score.value }
 					score_unit = row.score.unit
@@ -307,7 +345,7 @@ async function main() {
 			timer = playMove(san, timer)
 			if (!(chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition())) {
 				if (score_unit == 'cp') { 
-					if (program.voiceScore) { timer = playScore(score_cp_value, timer) }
+					if (program.voiceScore && (voiceScore == 1)) { timer = playScore(score_cp_value, timer) }
 				} 
 				if (score_unit == 'mate') { timer = playMate(score_mate_value, timer) }
 			}
@@ -368,12 +406,14 @@ async function main() {
 				if (program.debug) { console.log('[debug] Board data sent to client') }
 			}
 		}
+
 		function webPGNUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-pgn-data', data)
 				if (program.debug) { console.log('[debug] PGN data sent to client') }
 			}
 		}
+
 		function webTurnUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-turn-data', data)
@@ -455,6 +495,7 @@ async function main() {
 		}
 		
 		function playText(text) {
+			// Synthesized audio generated by IBM Watson using British English (en-GB) Kate (female) (text-to-speech demo webpage)
 			if (program.voice || program.voiceScore) { load('./audio/'+text+'.mp3').then(play) }	
 		}
 		
@@ -526,8 +567,8 @@ async function main() {
 		function playScore(trans, timer) {
 			timer = timer + 500
 			setTimeout(() => { playText("score") }, timer); 
-			setTimeout(() => { playText("=") }, timer+750); 
-			var t = timer + 1500
+			//setTimeout(() => { playText("=") }, timer+750); 
+			var t = timer + 750
 			//var t = timer + 750
 			var ti = 750
 			var c = 0
