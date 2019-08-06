@@ -108,7 +108,7 @@ To toggle vocal score information on/off, click twice on your queen's root initi
 
 To start a new game (and even be able to change colours), click twice on your king's initial square. Remember to play at the other side of the board (do not only swap pieces).
 
-Medusa has also a built-in web server, this enables matches to be followed live on port 3000 of the server.
+Medusa has also a built-in web server, this enables matches to be followed live on port 3000 of the server... :)
 
 ## Support
 
