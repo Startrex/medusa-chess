@@ -41,6 +41,12 @@ npm install noble
 npm install express
 npm install socket.io
 ```
+or simply
+
+```bash
+cd medusa-chess
+npm install
+```
 
 Depending on your system environment and the tools installed, **nobble** may or may not work out of the box. Please visit <a href="https://github.com/sandeepmistry/noble">https://github.com/sandeepmistry/noble</a> on how to install all the prerequisites for noble.
 
