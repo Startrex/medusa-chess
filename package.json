@@ -6,7 +6,6 @@
   "dependencies": {
     "audio-loader": "^1.0.3",
     "audio-play": "^2.2.1",
-    "bluetooth-hci-socket": "^0.5.1",
     "brfs": "^2.0.2",
     "chess.js": "^0.10.2",
     "commander": "^2.20.0",
