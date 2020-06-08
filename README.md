@@ -4,7 +4,7 @@ Medusa is a free Node.js interface tool for Bluetooth electronic boards and ches
 
 ## Description
 
-Usually we are only able to use electronic chess boards to play against a built-in engine, or connecting to specific sites. What if we could use an electronic board to play against a local chess engine installed on our PC? Now this is possible!
+Usually we are only able to use electronic chess boards to play against a built-in engine, or connecting to specific sites. What if we could use an electronic board to play against a local chess engine installed on our PC?...
 
 Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now able to play against any engine using the electronic board.
 
