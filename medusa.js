@@ -21,11 +21,11 @@ const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
 var chess = new Chess()
-
 var pgn_file = ''
+var connected = false
 
 program
-  .version('1.5.0')
+  .version('1.6.0')
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
   .option('-c, --voice-score', 'Activate engine voice with score information')
@@ -46,15 +46,13 @@ const CHARACTERISTIC_UUID = ["6e400001b5a3f393e0a9e50e24dcca9e"]; // this is the
 noble.on('stateChange', function(state) {
 	// Once the BLE radio has been powered on, it's possible to begin scanning for services
 	if (state === 'poweredOn') {
-	  console.log('Starting bluetooth connection...')
-	  noble.startScanning(SERVICE_UUID, false);
-	} else {
-	  noble.stopScanning();
+	  	console.log('Starting bluetooth connection...')
+	  	noble.startScanning(SERVICE_UUID, false);
 	}
 })
 
 noble.on('discover', function(board) {
-	noble.stopScanning(); // We found the board, stop scanning
+	if (connected == true) { console.log('Reconnecting') }
 	board.connect(function(err) { // Once the board has been discovered, now connect to it
 		board.discoverServices(SERVICE_UUID, function(err, services) {	
 			service = services[0]
@@ -68,6 +66,7 @@ noble.on('discover', function(board) {
 })
 
 async function main() {
+	connected = true
 	try {
 		console.log('Connected to board')
 		noble.startScanning(SERVICE_UUID, false); // In case board is switched off and on, medusa is able to reconnect
@@ -136,7 +135,7 @@ async function main() {
 				if (legal_moves.includes('O-O-O') && (human_colour == 'black')) { legal_moves = legal_moves.replace('O-O-O','Kc8')	}
 				if (legal_moves.includes('O-O') && (human_colour == 'white')) { legal_moves = legal_moves.replace('O-O','Kg1')	}
 				if (legal_moves.includes('O-O-O') && (human_colour == 'white')) { legal_moves = legal_moves.replace('O-O-O','Kc1')	}
-				if (program.debug) { console.log('[debug] Legal moves for clicked square: '+legal_moves) }
+				//if (program.debug) { console.log('[debug] Legal moves for clicked square: '+legal_moves) } // not necessary anymore...
 				if (legal_moves.indexOf(board_received.substr(2,2).toString()) == -1) {
 					sendBoard('INVALID')
 				} else {
@@ -193,6 +192,7 @@ async function main() {
 		var move = {}
 		var moves = {}
 		var move_info_array = []
+		var engine_description = ''
 		var engine_elo = '?'
 
 		//UCI
@@ -200,6 +200,10 @@ async function main() {
 		console.log('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
 		console.log('Using path = '+config.engine['path']) // parse engine path
+		if (typeof config.engine.description !== 'undefined') {                         
+			console.log('Loading engine information description = '+config.engine.description)                         
+			engine_description = config.engine.description                 
+		}
 		if (typeof config.engine.elo !== 'undefined') { 
 			console.log('Loading engine information elo = '+config.engine.elo) 
 			engine_elo = config.engine.elo
@@ -212,8 +216,9 @@ async function main() {
 		}
 		console.log('Connected to '+engine.id.name)
 		var engine_name = engine.id.name
+		if (engine_description != '') engine_name = engine.id.name + ' ' + engine_description
 		var c = 0
-		await engine.isready() 
+		await engine.isready()
 		if (typeof config.uci_options.option != 'undefined') {
 			while (typeof config.uci_options.option[c] !== 'undefined') { // parse engine options
 				console.log('Loading option '+config.uci_options.option[c])
@@ -241,6 +246,7 @@ async function main() {
 			console.log('Loading move setting movetime = '+config.moves.movetime)
 			go['movetime'] = config.moves.movetime
 		}
+				
 		if (program.save) { console.log('Games to be saved as .pgn files') }
 		pgnReset(true) // player is white
 		console.log('Engine ready')
@@ -322,10 +328,11 @@ async function main() {
 			move['from'] = result.bestmove.substr(0,2)
 			move['to'] = result.bestmove.substr(2,2)
 			var san = chess.move(move)['san']
+			chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
 			if (chess.history().length == 1 ) { // first move
 				pgn_file = getDateTime()+'.pgn'
 			}
-			if ((human_colour == 'white') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
+			if ((human_colour == 'white') && (chess.in_checkmate())) {chess.header('Result', '0-1') }
 			if ((human_colour == 'black') && (chess.in_checkmate())) {chess.header('Result', '1-0') }
 			if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
 			var chess_pgn = getChessPGN()
@@ -403,21 +410,21 @@ async function main() {
 		function webBoardUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-board-data', data)
-				if (program.debug) { console.log('[debug] Board data sent to client') }
+				if (program.debug) { console.log('[debug] Board data sent to web client') }
 			}
 		}
 
 		function webPGNUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-pgn-data', data)
-				if (program.debug) { console.log('[debug] PGN data sent to client') }
+				if (program.debug) { console.log('[debug] PGN data sent to web client') }
 			}
 		}
 
 		function webTurnUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-turn-data', data)
-				if (program.debug) { console.log('[debug] Turn data sent to client') }
+				if (program.debug) { console.log('[debug] Turn data sent to web client') }
 			}
 		}
 		
@@ -450,10 +457,10 @@ async function main() {
 			if (player_is_white) {
 				chess.header('White', pgn_player)
 				chess.header('WhiteElo', pgn_player_elo)
-				chess.header('Black', engine.id.name)
+				chess.header('Black', engine_name)
 				chess.header('BlackElo', engine_elo)	
 			} else {
-				chess.header('White', engine.id.name)
+				chess.header('White', engine_name)
 				chess.header('WhiteElo', engine_elo)	
 				chess.header('Black', pgn_player) 
 				chess.header('BlackElo', pgn_player_elo)	
@@ -489,7 +496,7 @@ async function main() {
 			var year = date.getFullYear();
 			var month = date.getMonth() + 1;
 			month = (month < 10 ? "0" : "") + month;
-			var day  = date.getDay();
+			var day  = date.getDate();
 			day = (day < 10 ? "0" : "") + day;
 			return year + "." + month + "." + day + "-" + hour + "." + min + "." + sec;
 		}
@@ -567,9 +574,7 @@ async function main() {
 		function playScore(trans, timer) {
 			timer = timer + 500
 			setTimeout(() => { playText("score") }, timer); 
-			//setTimeout(() => { playText("=") }, timer+750); 
 			var t = timer + 750
-			//var t = timer + 750
 			var ti = 750
 			var c = 0
 			var p1 = trans.substr(c,1)
@@ -578,16 +583,19 @@ async function main() {
 			c++
 			if (c == trans.length) return t
 			var p2 = trans.substr(c,1)
+			if (p2 == '.') p2 = 'point'
 			setTimeout(() => { playText(p2) }, t)
 			t = t + ti
 			c++
 			if (c == trans.length) return t
 			var p3 = trans.substr(c,1)
+			if (p3 == '.') p3 = 'point'
 			setTimeout(() => { playText(p3) }, t)
 			t = t + ti
 			c++
 			if (c == trans.length) return t
 			var p4 = trans.substr(c,1)
+			if (p4 == '.') p4 = 'point'
 			setTimeout(() => { playText(p4) }, t)
 			t = t + ti
 			c++
@@ -623,7 +631,7 @@ async function main() {
 		}
 		
 		io.on('connection', function(socket){
-			if (program.debug) { console.log('[debug] Client connection received') }
+			if (program.debug) { console.log('[debug] Web client connection received') }
 			socket.on('client-to-server-data', function (data) { }) // not used
 		})
 		

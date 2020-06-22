@@ -1,0 +1,46 @@
+#!/bin/sh
+# /etc/init.d/medusa 
+
+### BEGIN INIT INFO 
+# Provides:          medusa 
+# Required-Start:    $remote_fs $syslog 
+# Required-Stop:     $remote_fs $syslog 
+# Default-Start:     2 3 4 5 
+# Default-Stop:      0 1 6 
+# Short-Description: Start daemon at boot time 
+# Description:       Enable service provided by daemon. 
+### END INIT INFO
+
+# this is to start medusa as a service [raspbian, ...]
+# do not forget to make this file executable by using chmod 755;
+# to make this automatically bootable at startup: update-rc.d medusa defaults
+
+prog="Medusa Chess" 
+NEWLINE='\n'  
+start() {
+   	STR="Starting $prog... $NEWLINE"
+   	echo "$STR"
+  	exec forever --minUptime=1000 --spinSleepTime=1000 --sourceDir=/home/pi/medusa-chess -p /usr/local/bin/node medusa.js --save --voice-score --web --debug >> /home/pi/medusa-chess/medusa.log &
+}  
+stop() {
+   	STR="Stopping $prog... $NEWLINE"
+   	echo "$STR"
+  	exec forever stop /home/pi/medusa-chess/medusa.js &
+}
+case "$1" in 
+	start) 
+		start  
+		;; 
+	stop) 
+		stop
+		;;
+	restart)         
+		${0} stop
+		sleep 1
+		${0} start         
+		;;
+	*) 
+		echo "Usage: $0 {start|stop|restart}" 
+esac 
+exit 0
+
