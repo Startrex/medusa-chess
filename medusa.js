@@ -327,6 +327,7 @@ async function main() {
 			// log move
 			move['from'] = result.bestmove.substr(0,2)
 			move['to'] = result.bestmove.substr(2,2)
+			if (result.bestmove.length == 5) { move['promotion'] = result.bestmove.substr(4,1).toUpperCase() } else { move['promotion'] = '' }
 			var san = chess.move(move)['san']
 			chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
 			if (chess.history().length == 1 ) { // first move
