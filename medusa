@@ -12,7 +12,8 @@
 ### END INIT INFO
 
 # this is to start medusa as a service [raspbian, ...]
-# do not forget to make this file executable by using chmod 755;
+# copy this to your init.d directory
+# do not forget to make it executable by using chmod 755;
 # to make this automatically bootable at startup: update-rc.d medusa defaults
 
 prog="Medusa Chess" 
