@@ -10,9 +10,9 @@ Inspired by the fantastic Square Off board, and Leela Chess Zero, we are now abl
 
 Basically all we have to do is to install Medusa and a chess engine. Medusa will act as a middleman between the UCI engine and the board.
 
-We have also powered Medusa with voice feedback. So we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information. In addition, we have the option to follow up a game in realtime in a graphic board on a local webpage, and even stream it if we want to.
+We have also powered Medusa with voice capabilities, so we can hear what the engine has to say like a human player. The engine speaks up about its moves, score, and all the necessary information. In addition, we have the option to follow up a game in realtime in a graphic board on a local webpage, and even stream it if we want to.
 
-So we end up with the combination of a smart board where pieces move by themselves like Square Off, and AI chess engines like Leela Chess Zero, and naturally pleasant voice talking.
+So we end up with the combination of a smart board where pieces move by themselves like Square Off, and AI chess engines like Leela Chess Zero, and a naturally pleasant vocal feedback.
 
 In my case, I configured a Raspberry Pi Zero with medusa starting up from the booting process, which I leave it on all the time. This allows a great always-on experience, where everytime I want to play I just switch on Square Off, and start playing. For the engine itself, I'm using Lc0 with Mean Girl distilled network for lots of fun!
 
