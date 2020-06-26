@@ -14,7 +14,7 @@ We have also powered Medusa with voice capabilities, so we can hear what the eng
 
 So we end up with the combination of a smart board where pieces move by themselves like Square Off, and AI chess engines like Leela Chess Zero, and a naturally pleasant vocal feedback.
 
-In my case, I configured a Raspberry Pi Zero with medusa starting up from the booting process, which I leave it on all the time. This allows a great always-on experience, where everytime I want to play I just switch on Square Off, and start playing. For the engine itself, I'm using Lc0 with Mean Girl distilled network for lots of fun!
+In my case, I configured a Raspberry Pi Zero with medusa starting up from the booting process, which I leave it powered on all the time. This allows a great always-on experience, where everytime I want to play I just switch on Square Off, and start playing. For the engine itself, I'm using Lc0 with Mean Girl distilled network for lots of fun!
 
 Hope you enjoy Medusa as much as I do. Please feel free to join our <a href="https://discord.gg/ZYAj4FJ">Medusa Chess channel</a> on Discord.
 
