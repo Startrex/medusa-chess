@@ -78,8 +78,8 @@ Sections are separated by '[ ]', and commented lines start with a ';'. We have 4
 
 [engine]
 path = [enter full absolute path folder here]/lc0.exe
-description = '<mean girl 8> go nodes: 20'
-;elo = 3200
+description = '<mean girl 8> 20n'
+elo = 1850
 ;path = [enter full absolute path folder here]/stockfish_10_x64.exe
 ;description = 'bla bla bla'
 ;elo = 3200
@@ -87,8 +87,8 @@ description = '<mean girl 8> go nodes: 20'
 [moves]
 ;pick one:
 ;depth = 3
-;nodes = 20
-movetime = 2000
+nodes = 20
+;movetime = 2000
 
 [uci_options]
 ;check engine documentation for available options
