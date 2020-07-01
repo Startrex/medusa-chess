@@ -126,7 +126,7 @@ To start a new game (and even be able to change colours), click twice on your ki
 
 Medusa has also a built-in web server, this enables matches to be followed live on port 3000 of the server... :)
 
-## Project page
+## Project
 
 <a href="https://hackaday.io/project/173389-medusa-chess">https://hackaday.io/project/173389-medusa-chess</a>
 
