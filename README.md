@@ -78,7 +78,7 @@ Sections are separated by '[ ]', and commented lines start with a ';'. We have 4
 
 [engine]
 path = [enter full absolute path folder here]/lc0.exe
-description = '<mean girl 8> 20n'
+description = '<mean girl 8> 10n'
 elo = 1850
 ;path = [enter full absolute path folder here]/stockfish_10_x64.exe
 ;description = 'bla bla bla'
@@ -87,7 +87,7 @@ elo = 1850
 [moves]
 ;pick one:
 ;depth = 3
-nodes = 20
+nodes = 10
 ;movetime = 2000
 
 [uci_options]
