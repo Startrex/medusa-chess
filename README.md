@@ -107,7 +107,7 @@ PlayerElo = '?'
 node medusa               # Start the basic interface
 node medusa --help        # Show command-line usage and options
 node medusa --voice       # Activate engine voice
-node medusa --voice-score # Activate engine voice with score information 
+node medusa --voiceScore  # Activate engine voice with score information 
 node medusa --web         # Enable realtime webpage on 'http://localhost:3000/chessboard/medusa.html'
 node medusa --save        # Save games in the pgn folder
 ```
@@ -120,7 +120,7 @@ There are some runtime commands that can be issued directly from the board. This
 
 For hints, click twice on your queen's knight initial square.
 
-To toggle vocal score information on/off, click twice on your queen's root initial square. If voice is activated, this enables score information to be announced (or toggled off) in case 'voice-score' was not selected at startup.
+To toggle vocal score information on/off, click twice on your queen's root initial square. If voice is activated, this enables score information to be announced (or toggled off) in case 'voiceScore' was not selected at startup.
 
 To start a new game (and even be able to change colours), click twice on your king's initial square. Remember to play at the other side of the board (do not only swap pieces).
 
