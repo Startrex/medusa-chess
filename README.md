@@ -55,12 +55,6 @@ Depending on your system environment and the tools installed, **nobble** may or 
 
 Getting bluetooth to work is the most difficult part, but it should not be an issue if you follow the instructions and/or you get the appropriate hardware. As my native laptop's bluetooth adapter was not supported by noble, I just got this <a href="https://www.amazon.co.uk/Bluetooth-Yeung-Qee-Compatible-computers-black-1/dp/B07F67Q2KV/ref=sr_1_1?ie=UTF8&qid=1551884488&sr=8-1&keywords=CSR8510+A10+bluetooth+adapter">cheap dongle</a> from Amazon, and it worked perfectly!
 
-Also, in case errors (this happened to me recently with package chess.js), try going for the latest available package, for instance:
-
-```
-npm install chess.js@latest
-```
-
 ## Configuration
 
 Configuration can be changed by editing the file **medusa.config**. 
