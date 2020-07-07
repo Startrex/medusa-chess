@@ -1,47 +1,100 @@
 <!doctype html>
 <html lang="en">
 <html>
-    <head>
-    	<meta charset="utf-8">
-    	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <title>Medusa Chess</title>
-        <link rel="shortcut icon" href="/favicon.png">
-        <link rel="stylesheet" href="/chessboard/css/bootstrap.min.css"></link>
-        <link rel="stylesheet" href="/chessboard/css/chessboard-0.3.0.min.css"></link>
-    	<script src="/socket.io/socket.io.js"></script>
-    	<script src="/chessboard/js/jquery-3.3.1.min.js"></script>
+
+	<head>
+
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<meta name="description" content="">
+		<meta name="author" content="">
+		<title>Medusa Chess</title>
+		<link rel="shortcut icon" href="/favicon.png">
+		<!-- Bootstrap core CSS -->
+		<link href="/chessboard/css/bootstrap.min.css" rel="stylesheet">
+		<!-- Custom styles for this template -->
+		<link href="/chessboard/css/medusa.css" rel="stylesheet">
+		<link href="/chessboard/css/sticky-footer.css" rel="stylesheet">
+		<link href="/chessboard/css/spinners.css" rel="stylesheet">
+		<link href="/chessboard/css/blinking-cursor.css" rel="stylesheet">
+		<!-- Chessboard CSS -->
+		<link href="/chessboard/css/chessboard-0.3.0.min.css" rel="stylesheet"></link>
+		<!-- My Chessboard theme CSS -->
+		<link href="/chessboard/css/mychessboardtheme.css" rel="stylesheet"></link>
+
+	</head>
+
+	<body>
+		
+		<nav class="navbar navbar-dark bg-dark">
+			<span class="navbar-brand mb-0 h1">Medusa Chess <span class="badge badge-warning"> LIVE </span></span>
+		</nav>
+		
+		<main role="main"></main>
+
+			<div class="container-fluid">
+			
+				<p></p>
+				<div class="row">
+					<div class="col-md"><span class="small font-weight-bold text-secondary">&nbsp;&nbsp;&nbsp;&nbsp;terminal log</span><div class="col-md bg-light rounded border console_frame mywindow-defs">
+						<div class="console">
+
+							<p class='small text-success'>
+								Connecting to server...<span class="blinking-cursor">|</span>
+							</p>
+
+						</div>
+					</div></div>
+					<div class="col-md"><div class="col-md text-center">
+						<p></p>
+						<span>
+							<span class="t_player"><span class="font-weight-bold text-dark"></span></span>
+							<main role="main">
+								<div id="board" style="width: 100%"></div>
+								<span class="b_player"><span class="font-weight-bold text-dark"></span></span>
+								<p></p>
+								<p class="turn"><span class="badge badge-pill badge-secondary"></span></p>
+							</main>
+						</span>
+					</div></div>
+					<div class="col-md"><span class="small font-weight-bold text-secondary">&nbsp;&nbsp;&nbsp;&nbsp;game pgn</span><div class="col-md bg-light rounded border pgn_frame mywindow-defs">
+						<div class="pgn">
+
+						</div>
+					</div></div>
+				</div>
+				
+				<div class="row">
+					<div class="col-md"><span class="small font-weight-bold text-secondary">&nbsp;&nbsp;&nbsp;&nbsp;engine evaluation</span><div class="col-md bg-light rounded border chart_frame mychart-defs">
+						<canvas id="chart_visualization" width="1000px" height="100px"></canvas>
+					</div></div>
+				</div>
+			
+			</div> <!-- /container -->
+
+		</main>
+
+		<footer class="footer">
+			<div class="container">
+			  <p class="text-muted small text-center">by zandora</p>
+			</div>
+		</footer>
+
+		<!-- jQuery JavaScript -->
+		<script src="/chessboard/js/jquery-3.3.1.min.js"></script>
+		<!-- Bootstrap core JavaScript -->
+		<script src="/chessboard/js/bootstrap.min.js"></script>
+		<!-- Chessboard JavaScript -->
         <script src="/chessboard/js/chessboard-0.3.0.min.js"></script>
-    </head>
-    <body>
-    	<main role="main" class="container text-center">
-    		<h2>Medusa Chess</h2>
-    		<div class="container" id="board" style="width: 260px"></div>
-    		<p class="turn">white to play</p>
-    		<p class="lead"></p>
-    	</main>
-        <script>
-        	// initial configuration
-            var cfg = {
-            	orientation: 'white',
-            	position: 'start',
-            	showNotation: false
-            };
-            var board = ChessBoard('board', cfg);
-        	var socket = io();
-        	//socket.emit('client-to-server-data', { }); // not used
-            socket.on('server-to-client-board-data', function (data) {
-            		console.log('[debug] Received board data: ' + JSON.stringify(data))
-            		var cfg = data
-            		var board = ChessBoard('board', cfg)	
-            });
-            socket.on('server-to-client-pgn-data', function (data) {
-            		console.log('[debug] Received pgn data: ' + JSON.stringify(data))
-            		$( "p.lead" ).text(data)
-            });
-            socket.on('server-to-client-turn-data', function (data) {
-            		console.log('[debug] Received turn data: ' + JSON.stringify(data))
-            		$( "p.turn" ).text(data)
-            });
-        </script>
-    </body>
+		<!-- Socket.io JavaScript -->
+		<script src="/chessboard/js/socket.io.js"></script>
+		<!-- chartjs.org Javascript -->
+		<script src="/chessboard/js/Chart.bundle.min.js"></script>
+		<!-- Medusa Chess JavaScript -->
+		<script src="/chessboard/js/medusa.js"></script>
+
+	</body>
+
 </html>
