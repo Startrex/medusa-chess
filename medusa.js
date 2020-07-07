@@ -5,6 +5,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+const version = "2.0.0"
 const program = require('commander')
 const fs = require('fs')
 const ini = require('ini')
@@ -19,23 +20,60 @@ const app = express()
 const router = express.Router()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
+const moment = require('moment')
 
 var chess = new Chess()
 var pgn_file = ''
+var chess_pgn = ''
 var connected = false
+var message_log = ''
+var loading_pgn_show_message = true
+var turn_msg = ''
+var engine_name = ''
+var human_name = ''
+var human_colour = ''
+var intro_play = true
 
 program
-  .version('1.6.0')
+  .version(version)
   .option('-s, --save', 'Save games as pgn files')
   .option('-v, --voice', 'Activate engine voice')
-  .option('-c, --voice-score', 'Activate engine voice with score information')
+  .option('-c, --voiceScore', 'Activate engine voice with score information')
   .option('-w, --web', 'Enable realtime webpage')
   .option('-d, --debug', 'Debug (developers only)')
   .parse(process.argv)
 
-console.log('Welcome to Medusa Chess')
+var now = moment()
+var now_formatted = now.format('YYYY-MM-DD HH:mm:ss ')
 
-console.log('Waiting for bluetooth device to get ready...')
+console.log(now_formatted + 'Starting up...')
+
+if (program.save) {
+	console.log(now_formatted + 'Saving games as pgn is active')
+}
+if (program.voice) {
+	console.log(now_formatted + 'Engine voice is active')
+}
+if (program.voiceScore) {
+	console.log(now_formatted + 'Engine voice with score information is active')
+}
+if (program.web) {
+	console.log(now_formatted + 'Realtime webpage is enabled')
+}
+if (program.debug) {
+	console.log(now_formatted + 'Debug is on')
+}
+if (program.web) {
+	app.use('/favicon.ico', express.static('/favicon.png'));
+	app.use(express.static(__dirname));
+	router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
+	http.listen(3000, function(){ 
+		console.log(now_formatted + 'Realtime webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
+	})
+}	
+
+consoleLogger('Welcome to Medusa Chess')
+consoleLogger('Waiting for bluetooth device to get ready...')
 
 // Bluetooth
 
@@ -46,13 +84,18 @@ const CHARACTERISTIC_UUID = ["6e400001b5a3f393e0a9e50e24dcca9e"]; // this is the
 noble.on('stateChange', function(state) {
 	// Once the BLE radio has been powered on, it's possible to begin scanning for services
 	if (state === 'poweredOn') {
-	  	console.log('Starting bluetooth connection...')
+	  	consoleLogger('Starting bluetooth connection...')
 	  	noble.startScanning(SERVICE_UUID, false);
 	}
 })
 
 noble.on('discover', function(board) {
-	if (connected == true) { console.log('Reconnecting') }
+	if (connected == true) { 
+		consoleLogger('Reconnecting') 
+		playText("reconnecting")	
+		intro_play = false
+		human_colour = 'white'
+	}
 	board.connect(function(err) { // Once the board has been discovered, now connect to it
 		board.discoverServices(SERVICE_UUID, function(err, services) {	
 			service = services[0]
@@ -68,38 +111,42 @@ noble.on('discover', function(board) {
 async function main() {
 	connected = true
 	try {
-		console.log('Connected to board')
+		consoleLogger('Connected to board')
 		noble.startScanning(SERVICE_UUID, false); // In case board is switched off and on, medusa is able to reconnect
 		characteristic_N.on('data', async function(data) { // Notification from board is received
 			var board_received = data.toString('utf8').trim()
-			if (program.debug) { console.log('[debug] ' + board_received+' received from board') }
+			if (program.debug) { consoleLogger('[DEBUG] ' + board_received +' received from board') }
 			if (board_received == 'e1e1') { // new game as white 
 				sendBoard('RSTVAR')
 				sendBoard('GAMEWHITE')
-				chess.reset()
-				pgnReset(true) // player is white
-				console.log('Human asked to play white, engine is playing black')
+				consoleLogger('Human asked to play white, engine is playing black')
 				human_colour = 'white'
 				playText("ok")
 				setTimeout(() => { playText("I-play-black") }, 1000); 
 				setTimeout(() => { playText("good-luck") }, 2250); 
 				webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
-				webPGNUpdate('')
-				webTurnUpdate('black to play')
+				chess.reset()
+				pgnReset(true) // player is white
+				chess_pgn = getChessPGN()
+				webPGNUpdate(chess_pgn)
+				webTurnUpdate('white to play')
+				consoleLogger('Waiting for human...')
 				move_info_array = []
 			} else if (board_received == 'e8e8') { // new game as black
 				sendBoard('RSTVAR')
 				sendBoard('GAMEBLACK')
-				chess.reset()
-				pgnReset(false) // player is black
-				console.log('Human asked to play black, engine is playing white')
+				consoleLogger('Human asked to play black, engine is playing white')
 				human_colour = 'black'
 				playText("ok")
 				setTimeout(() => { playText("I-play-white") }, 1000); 
 				setTimeout(() => { playText("good-luck") }, 2250); 
 				webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
-				webPGNUpdate('')
-				webTurnUpdate('white to play')
+				chess.reset()
+				pgnReset(false) // player is black
+				chess_pgn = getChessPGN()
+				webPGNUpdate(chess_pgn)
+				turn_msg = 'white to play'
+				webTurnUpdate(turn_msg)
 				move_info_array = []
 				await engine.position(chess.fen())
 				engineTurn()
@@ -107,22 +154,22 @@ async function main() {
 				sendBoard('INVALID')
 				if (voiceScore == 1) {
 					voiceScore = 0
-					console.log('Vocal score information switched off')
+					consoleLogger('Vocal score information switched off')
 					playText('score-off')
 				} else if (voiceScore == 0) {
 					voiceScore = 1
-					console.log('Vocal score information switched on')
+					consoleLogger('Vocal score information switched on')
 					playText('score-on')
 				}
 			} else if ((board_received == 'b1b1') || (board_received == 'b8b8')) { // ask for hint
 				sendBoard('INVALID')
-				console.log('Asking for hint...')
+				consoleLogger('Asking for hint...')
 				await engine.position(chess.fen()) // update position for engine
 				var result = await engine.go(go)
 				move['from'] = result.bestmove.substr(0,2)
 				move['to'] = result.bestmove.substr(2,2)
 				var temp_san = chess.move(move)['san']
-				console.log('Hint: ' + temp_san) 
+				consoleLogger('Hint: ' + temp_san) 
 				if (program.voice || program.voiceScore) { 
 					playText("hint")
 					playMove(temp_san, 1000)
@@ -135,7 +182,7 @@ async function main() {
 				if (legal_moves.includes('O-O-O') && (human_colour == 'black')) { legal_moves = legal_moves.replace('O-O-O','Kc8')	}
 				if (legal_moves.includes('O-O') && (human_colour == 'white')) { legal_moves = legal_moves.replace('O-O','Kg1')	}
 				if (legal_moves.includes('O-O-O') && (human_colour == 'white')) { legal_moves = legal_moves.replace('O-O-O','Kc1')	}
-				//if (program.debug) { console.log('[debug] Legal moves for clicked square: '+legal_moves) } // not necessary anymore...
+				//if (program.debug) { consoleLogger('[DEBUG] Legal moves for clicked square: '+legal_moves) } // not necessary anymore...
 				if (legal_moves.indexOf(board_received.substr(2,2).toString()) == -1) {
 					sendBoard('INVALID')
 				} else {
@@ -156,23 +203,29 @@ async function main() {
 					if ((human_colour == 'white') && (chess.in_checkmate())) { chess.header('Result', '1-0') }
 					if ((human_colour == 'black') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
 					if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-					var chess_pgn = getChessPGN()					
+					chess_pgn = getChessPGN()					
 					pgnSave(pgn_file, chess_pgn)
 					webPGNUpdate(chess_pgn)
 					if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
-					console.log('Human played ' + san)
+					consoleLogger('Human played ' + san)
 					if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
 						EOG_messages()
 						sendBoard('RSTVAR')
 						if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
-						console.log('Choose colours by clicking twice on your king\'s initial square to start a new game.')
+						consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game.')
 						if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { playText("draw") }  else { playText("congratulations") }
 						setTimeout(() => { playText("choose-colours") }, 1750); 
 						chess.reset()
 						if (human_colour == 'white') { pgnReset(true) } else { pgnReset(false) }
 						webTurnUpdate('')
 					} else {
-						if (human_colour == 'white') { webTurnUpdate('black to play') } else { webTurnUpdate('white to play') }
+						if (human_colour == 'white') { 
+							turn_msg = 'black to play'
+							webTurnUpdate(turn_msg)
+						} else { 
+							turn_msg = 'white to play'
+							webTurnUpdate(turn_msg)
+						}
 						await engine.position(chess.fen()) // update position for engine
 						engineTurn()
 					}
@@ -186,9 +239,9 @@ async function main() {
 		sendBoard('CONNECTED')
 		sendBoard('RSTVAR')
 		sendBoard('GAMEWHITE') // we always start as white		
-		console.log('Board ready')
+		consoleLogger('Board ready')
 		chess.reset()
-		var human_colour = 'white'
+		human_colour = 'white'
 		var move = {}
 		var moves = {}
 		var move_info_array = []
@@ -197,104 +250,108 @@ async function main() {
 
 		//UCI
 		file = 'medusa.config'
-		console.log('Checking '+file+'...')
+		consoleLogger('Checking '+file+'...')
 		var config = ini.parse(fs.readFileSync('./'+file, 'utf-8'))
-		console.log('Using path = '+config.engine['path']) // parse engine path
+		consoleLogger('Using path = '+config.engine['path']) // parse engine path
 		if (typeof config.engine.description !== 'undefined') {                         
-			console.log('Loading engine information description = '+config.engine.description)                         
+			consoleLogger('Loading engine information description = '+config.engine.description)                         
 			engine_description = config.engine.description                 
 		}
 		if (typeof config.engine.elo !== 'undefined') { 
-			console.log('Loading engine information elo = '+config.engine.elo) 
+			consoleLogger('Loading engine information elo = '+config.engine.elo) 
 			engine_elo = config.engine.elo
 		} 
-		console.log('Starting chess engine...')
+		consoleLogger('Starting chess engine...')
 		const engine = new Engine(config.engine['path'])
 		try { await engine.init() } catch(error) { 
-			console.log('[ERROR] engine initialization') 
+			consoleLogger('[ERROR] Engine initialization') 
 			process.exit(1)
 		}
-		console.log('Connected to '+engine.id.name)
+		consoleLogger('Connected to '+engine.id.name)
 		var engine_name = engine.id.name
 		if (engine_description != '') engine_name = engine.id.name + ' ' + engine_description
 		var c = 0
 		await engine.isready()
 		if (typeof config.uci_options.option != 'undefined') {
 			while (typeof config.uci_options.option[c] !== 'undefined') { // parse engine options
-				console.log('Loading option '+config.uci_options.option[c])
+				consoleLogger('Loading option '+config.uci_options.option[c])
 				var name = config.uci_options.option[c].split(' ')[1]
 				var value = ''
 				for (i=0; i < (config.uci_options.option[c].split(' ').length - 3); i++) {
 					value = value + config.uci_options.option[c].split(' ')[(i+3)] + ' '
 				}
-				if (program.debug) { console.log('option name ' + name + ' value ' + value + 'sent to engine') }
-				try { await engine.setoption(name, value) } catch(error) { console.log('[WARNING] setoption command failed') }
+				if (program.debug) { consoleLogger('option name ' + name + ' value ' + value + 'sent to engine') }
+				try { await engine.setoption(name, value) } catch(error) { consoleLogger('[WARNING] setoption command failed') }
 				await engine.isready()
 				c++
 			}
 		}
 		var go = {} // move settings
 		if (typeof config.moves.depth !== 'undefined') {
-			console.log('Loading move setting depth = '+config.moves.depth)
+			consoleLogger('Loading move setting depth = '+config.moves.depth)
 			go['depth'] = config.moves.depth
 		}
 		if (typeof config.moves.nodes !== 'undefined') {
-			console.log('Loading move setting nodes = '+config.moves.nodes)
+			consoleLogger('Loading move setting nodes = '+config.moves.nodes)
 			go['nodes'] = config.moves.nodes
 		}
 		if (typeof config.moves.movetime !== 'undefined') {
-			console.log('Loading move setting movetime = '+config.moves.movetime)
+			consoleLogger('Loading move setting movetime = '+config.moves.movetime)
 			go['movetime'] = config.moves.movetime
 		}
 				
-		if (program.save) { console.log('Games to be saved as .pgn files') }
+		if (program.save) { consoleLogger('Games to be saved as .pgn files') }
 		pgnReset(true) // player is white
-		console.log('Engine ready')
-		console.log('Play time!')
+		chess_pgn = getChessPGN()
+		consoleLogger('Engine ready')
+		consoleLogger('Play time!')
 		if (program.voice || program.voiceScore) {
-			console.log("To toggle vocal score information on/off, click twice on your queen's root initial square")
+			consoleLogger("To toggle vocal score information on/off, click twice on your queen's root initial square")
 		}
 		if (program.voiceScore) {
 			var voiceScore = 1
 		} else {
 			var voiceScore = 0
 		}
-		console.log("For hints, click twice on your queen's knight initial square")
-		console.log('Human is playing white, engine is playing black')
-		console.log("To change colours, click twice on your king's initial square")
-		console.log("Good luck!")
-		if (engine_name.indexOf('Lc0') > -1) {
-			playText("introduction-lc0") // intro for Lc0
-		} else if (engine_name.indexOf('Stockfish') > -1) {
-			playText("introduction-stockfish") // intro for Stockfish
-		} else {
-			playText("introduction-2") // generic intro for other engines
+		consoleLogger("For hints, click twice on your queen's knight initial square")
+		consoleLogger('Human is playing white, engine is playing black')
+		consoleLogger("To change colours, click twice on your king's initial square")
+		consoleLogger("Good luck!")
+		// update connected clients
+		webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
+		webPGNUpdate(chess_pgn)
+		turn_msg = 'white to play'
+		webTurnUpdate(turn_msg)
+		webBottomPlayerUpdate(human_name)
+		webTopPlayerUpdate(engine_name)
+		if (intro_play == true) {
+			if (engine_name.indexOf('Lc0') > -1) {
+				playText("introduction-lc0") // intro for Lc0
+			} else if (engine_name.indexOf('Stockfish') > -1) {
+				playText("introduction-stockfish") // intro for Stockfish
+			} else {
+				playText("introduction-2") // generic intro for other engines
+			}
 		}
-		if (program.web) {
-			app.use('/favicon.ico', express.static('/favicon.png'));
-			app.use(express.static(__dirname));
-			router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
-			http.listen(3000, function(){ 
-				console.log('Realtime webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
-			}) // nothing else should be coded after this
-		}		
+		consoleLogger('Waiting for human...')
+		// nothing else should be coded after this
 		// End of initialization
 		
 		// Misc functions
 		
 		function sendBoard(comm) {
 			var data = new Buffer.from('x'+comm+'z')
-			if (program.debug) { console.log('[debug] ' + data + ' sent to board') }
+			if (program.debug) { consoleLogger('[DEBUG] ' + data + ' sent to board') }
 			characteristic_WWR.write(data, false, function(err) {
 				if (err) { 
-					console.log('[ERROR] Board connection failed')
+					consoleLogger('[ERROR] Board connection failed')
 					process.exit(1)
 				}
 			})
 		}
 		
 		async function engineTurn() {
-			console.log('Engine is thinking...')
+			consoleLogger('Engine is thinking...')
 			var result = await engine.go(go)
 			var score_cp_value = 0
 			var score_mate_value = 0
@@ -322,27 +379,28 @@ async function main() {
 			} else { 
 				move_info = '{' + score_cp_value + '/' + depth_value + ' ' + time_value + 's}' 
 			}
-			if (program.debug) { console.log('[debug] ' + result.bestmove + ' received from engine') }
+			if (program.debug) { consoleLogger('[DEBUG] ' + result.bestmove + ' received from engine') }
 			move_info_array.push(move_info)
 			// log move
 			move['from'] = result.bestmove.substr(0,2)
 			move['to'] = result.bestmove.substr(2,2)
 			if (result.bestmove.length == 5) { move['promotion'] = result.bestmove.substr(4,1).toUpperCase() } else { move['promotion'] = '' }
 			var san = chess.move(move)['san']
-			chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
+			// we can use this for additional comments, or replace completely existing function I created (as set_comment did not exist in earlier versions...)
+			//chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
 			if (chess.history().length == 1 ) { // first move
 				pgn_file = getDateTime()+'.pgn'
 			}
 			if ((human_colour == 'white') && (chess.in_checkmate())) {chess.header('Result', '0-1') }
 			if ((human_colour == 'black') && (chess.in_checkmate())) {chess.header('Result', '1-0') }
 			if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-			var chess_pgn = getChessPGN()
+			chess_pgn = getChessPGN()
 			pgnSave(pgn_file, chess_pgn)
 			webPGNUpdate(chess_pgn)
 			if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
 			// check score
-			if (score_unit == 'cp' || score_unit == 'mate') { console.log('Engine played ' + san + ' ' + move_info) }
-			if (score_unit != 'cp' && score_unit != 'mate') { console.log('Engine played ' + san) }
+			if (score_unit == 'cp' || score_unit == 'mate') { consoleLogger('Engine played ' + san + ' ' + move_info) }
+			if (score_unit != 'cp' && score_unit != 'mate') { consoleLogger('Engine played ' + san) }
 			sendBoard(result.bestmove)
 			if (human_colour == 'white' && san == 'O-O') { sendBoard('h8f8') } // castling
 			else if (human_colour == 'white' && san == 'O-O-O') { sendBoard('a8d8') }
@@ -361,7 +419,7 @@ async function main() {
 				EOG_messages()
 				sendBoard('RSTVAR')
 				if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
-				console.log('Choose colours by clicking twice on your king\'s initial square to start a new game.')
+				consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game.')
 				timer = timer + 1000
 				if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { 
 					setTimeout(() => { playText("draw") }, timer) 
@@ -373,8 +431,14 @@ async function main() {
 				if (human_colour == 'white') { pgnReset(true) } else { pgnReset(false) }
 				webTurnUpdate('')
 			} else {
-				if (human_colour == 'white') { webTurnUpdate('white to play') } else { webTurnUpdate('black to play') }
-				console.log('Waiting for human...')
+				if (human_colour == 'white') { 
+					turn_msg = 'white to play'
+					webTurnUpdate(turn_msg) 
+				} else { 
+					turn_msg = 'black to play'
+					webTurnUpdate(turn_msg)
+				}
+				consoleLogger('Waiting for human...')
 			}
 		}
 		
@@ -382,14 +446,14 @@ async function main() {
 			if (program.save) {
 				fs.writeFile('./pgn/'+pgn_file, chess.pgn(), 'utf-8', function(err) {
 					if(err) {
-						console.log('[WARNING] ' + err)
+						consoleLogger('[WARNING] ' + err)
 					}
 				})
 			}
 		}
 		
 		function getChessPGN() {
-			// insert 'move_info_array' into pgn game
+			// also insert 'move_info_array' into pgn game
 			var new_pgn = chess.pgn()
 			var nbr_moves = Math.round(chess.history().length/2)
 			for (move_nbr = 1; move_nbr <= nbr_moves; move_nbr++) {
@@ -411,47 +475,63 @@ async function main() {
 		function webBoardUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-board-data', data)
-				if (program.debug) { console.log('[debug] Board data sent to web client') }
+				if (program.debug) { consoleLogger('[DEBUG] Board data sent to web clients') }
 			}
 		}
 
 		function webPGNUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-pgn-data', data)
-				if (program.debug) { console.log('[debug] PGN data sent to web client') }
+				if (program.debug) { consoleLogger('[DEBUG] PGN data sent to web clients') }
 			}
 		}
 
 		function webTurnUpdate(data) {
 			if (program.web) {
 				io.emit('server-to-client-turn-data', data)
-				if (program.debug) { console.log('[debug] Turn data sent to web client') }
+				if (program.debug) { consoleLogger('[DEBUG] Turn data sent to web clients') }
 			}
 		}
-		
-		function pgnReset(player_is_white) {
-			var pgn_player = '?'
+
+		function webTopPlayerUpdate(data) {
+			if (program.web) {
+				io.emit('server-to-client-top_player-data', data)
+				if (program.debug) { consoleLogger('[DEBUG] Top player data sent to web clients') }
+			}
+		}
+
+		function webBottomPlayerUpdate(data) {
+			if (program.web) {
+				io.emit('server-to-client-bottom_player-data', data)
+				if (program.debug) { consoleLogger('[DEBUG] Bottom player data sent to web clients') }
+			}
+		}
+
+		function pgnReset(player_is_white) { // player is white? true or false
+			var pgn_player = '?' 
 			var pgn_event = '?'
 			var pgn_site = '?'
 			var pgn_player_elo = '?'
 			if (typeof config.pgn.Event !== 'undefined') { // pgn settings
-				console.log('Loading pgn setting event = '+config.pgn.Event)
+				if (loading_pgn_show_message == true) {consoleLogger('Loading pgn setting event = '+config.pgn.Event)}
 				pgn_event = config.pgn.Event
 			}
 			if (typeof config.pgn.Site !== 'undefined') {
-				console.log('Loading pgn setting site = '+config.pgn.Site)
+				if (loading_pgn_show_message == true) {consoleLogger('Loading pgn setting site = '+config.pgn.Site)}
 				pgn_site = config.pgn.Site
 			}
 			if (typeof config.pgn.Player !== 'undefined') {
-				console.log('Loading pgn setting player = '+config.pgn.Player)
+				if (loading_pgn_show_message == true) {consoleLogger('Loading pgn setting player = '+config.pgn.Player)}
 				pgn_player = config.pgn.Player
 			} else {
 				pgn_player = 'Human player'
 			}
+			human_name = pgn_player
 			if (typeof config.pgn.PlayerElo !== 'undefined') {
-				console.log('Loading pgn setting player elo = '+config.pgn.PlayerElo)
+				if (loading_pgn_show_message == true) {consoleLogger('Loading pgn setting player elo = '+config.pgn.PlayerElo)}
 				pgn_player_elo = config.pgn.PlayerElo
 			}
+			if (loading_pgn_show_message == true) {loading_pgn_show_message = false} // do not show anymore
 			chess.header('Event', pgn_event)
 			chess.header('Site', pgn_site)
 			chess.header('Date',getDateTime().substr(0,10))
@@ -469,10 +549,10 @@ async function main() {
 		}
 		
 		function EOG_messages() {
-			if (chess.in_checkmate()) { console.log('End of game: checkmate') }
-			if (chess.in_draw()) { console.log('End of game: draw by 50-move rule or insufficient material') }
-			if (chess.in_stalemate()) { console.log('End of game: draw by stalemate') }
-			if (chess.in_threefold_repetition()) { console.log('End of game: draw by repetition of position')	}
+			if (chess.in_checkmate()) { consoleLogger('End of game: checkmate') }
+			if (chess.in_draw()) { consoleLogger('End of game: draw by 50-move rule or insufficient material') }
+			if (chess.in_stalemate()) { consoleLogger('End of game: draw by stalemate') }
+			if (chess.in_threefold_repetition()) { consoleLogger('End of game: draw by repetition of position')	}
 		}
 		
 		function askQuestion(query) {
@@ -500,11 +580,6 @@ async function main() {
 			var day  = date.getDate();
 			day = (day < 10 ? "0" : "") + day;
 			return year + "." + month + "." + day + "-" + hour + "." + min + "." + sec;
-		}
-		
-		function playText(text) {
-			// Synthesized audio generated by IBM Watson using British English (en-GB) Kate (female) (text-to-speech demo webpage)
-			if (program.voice || program.voiceScore) { load('./audio/'+text+'.mp3').then(play) }	
 		}
 		
 		function playMove(trans, timer) {
@@ -632,12 +707,55 @@ async function main() {
 		}
 		
 		io.on('connection', function(socket){
-			if (program.debug) { console.log('[debug] Web client connection received') }
+			if (program.debug) { 
+				now = moment()
+				now_formatted = now.format('YYYY-MM-DD HH:mm:ss ')
+				console.log(now_formatted + '[DEBUG] Web client connection received') // let's not use consoleLogger for this
+			}
 			socket.on('client-to-server-data', function (data) { }) // not used
+			// initial data sent over to this new connection only
+			socket.emit('server-to-client-console-data', message_log) // console
+			socket.emit('server-to-client-turn-data', turn_msg) // turn
+			socket.emit('server-to-client-pgn-data', chess_pgn) // pgn
+			socket.emit('server-to-client-bottom_player-data', human_name) // bottom player
+			socket.emit('server-to-client-top_player-data', engine_name) // top player
+			if (human_colour == 'white') { 
+				socket.emit('server-to-client-board-data', { orientation: 'white',position: chess.fen(),showNotation: false }) // board
+			} else { 
+				socket.emit('server-to-client-board-data', { orientation: 'black',position: chess.fen(),showNotation: false }) // board
+			}
+			if (program.debug) { 
+				console.log(now_formatted + '[DEBUG] Initial data sent to web client') // let's not use consoleLogger for this
+			}
 		})
 		
 	} catch(err) { 
-		console.log('[ERROR] ' + err) 
+		consoleLogger('[ERROR] ' + err) 
 		process.exit(1)
 	} 
+}
+
+function consoleLogger(message) {
+	var now = moment()
+	var now_formatted = now.format('YYYY-MM-DD HH:mm:ss ')
+	console.log(now_formatted + message) // log to console
+	var line_counter = message_log.split(/\n/).length
+	if (line_counter > 100) { // let's get rid of oldest line, so our log does not get too big
+		message_log = message_log.slice(message_log.indexOf('\n')+1)
+		message_log = '(...)\n' + message_log + '\n' + (now_formatted + message)
+	} else {
+		if (message_log != '') {
+			message_log = message_log + '\n' + (now_formatted + message)
+		} else {
+			message_log = (now_formatted + message)
+		}
+	}
+	if (program.web) {
+		io.emit('server-to-client-console-data', message_log)
+	}
+}
+
+function playText(text) {
+	// Synthesized audio generated by IBM Watson using British English (en-GB) Kate (female) (text-to-speech demo webpage)
+	if (program.voice || program.voiceScore) { load('./audio/'+text+'.mp3').then(play) }	
 }
