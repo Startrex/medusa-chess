@@ -122,9 +122,9 @@ var chart = new Chart(ctx, {
         scales: {
             yAxes: [{
                 ticks: {
-                    min: -5,
-                    max: 5,
-                    stepSize: 2.5,
+                    min: -2,
+                    max: 2,
+                    stepSize: 1,
                     beginAtZero: false
                 }
             }]
