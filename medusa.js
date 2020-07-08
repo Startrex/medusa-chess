@@ -210,7 +210,7 @@ async function main() {
 						EOG_messages()
 						sendBoard('RSTVAR')
 						if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
-						consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game.')
+						consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game')
 						if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { playText("draw") }  else { playText("congratulations") }
 						setTimeout(() => { playText("choose-colours") }, 1750); 
 						chess.reset()
@@ -414,7 +414,7 @@ async function main() {
 				EOG_messages()
 				sendBoard('RSTVAR')
 				if (human_colour == 'white') { sendBoard('GAMEWHITE') } else { sendBoard('GAMEBLACK') }
-				consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game.')
+				consoleLogger('Choose colours by clicking twice on your king\'s initial square to start a new game')
 				timer = timer + 1000
 				if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { 
 					setTimeout(() => { playText("draw") }, timer) 
