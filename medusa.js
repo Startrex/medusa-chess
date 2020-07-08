@@ -24,7 +24,6 @@ const moment = require('moment')
 
 var chess = new Chess()
 var pgn_file = ''
-var chess_pgn = ''
 var connected = false
 var message_log = ''
 var loading_pgn_show_message = true
@@ -33,6 +32,7 @@ var engine_name = ''
 var human_name = ''
 var human_colour = ''
 var intro_play = true
+var web_port = 3000
 
 program
   .version(version)
@@ -67,8 +67,8 @@ if (program.web) {
 	app.use('/favicon.ico', express.static('/favicon.png'));
 	app.use(express.static(__dirname));
 	router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
-	http.listen(3000, function(){ 
-		console.log(now_formatted + 'Realtime webpage enabled at \'http://localhost:3000/chessboard/medusa.html\'')
+	http.listen(web_port, function(){ 
+		console.log(now_formatted + 'Live webpage activated at \'http://localhost:' + web_port + '/chessboard/medusa.html\'')
 	})
 }	
 
@@ -127,8 +127,7 @@ async function main() {
 				webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
 				chess.reset()
 				pgnReset(true) // player is white
-				chess_pgn = getChessPGN()
-				webPGNUpdate(chess_pgn)
+				webPGNUpdate(chess.pgn())
 				webTurnUpdate('white to play')
 				consoleLogger('Waiting for human...')
 				move_info_array = []
@@ -143,8 +142,7 @@ async function main() {
 				webBoardUpdate({ orientation: 'black',position: 'start',showNotation: false })
 				chess.reset()
 				pgnReset(false) // player is black
-				chess_pgn = getChessPGN()
-				webPGNUpdate(chess_pgn)
+				webPGNUpdate(chess.pgn())
 				turn_msg = 'white to play'
 				webTurnUpdate(turn_msg)
 				move_info_array = []
@@ -203,9 +201,8 @@ async function main() {
 					if ((human_colour == 'white') && (chess.in_checkmate())) { chess.header('Result', '1-0') }
 					if ((human_colour == 'black') && (chess.in_checkmate())) { chess.header('Result', '0-1') }
 					if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-					chess_pgn = getChessPGN()					
-					pgnSave(pgn_file, chess_pgn)
-					webPGNUpdate(chess_pgn)
+					pgnSave(pgn_file)
+					webPGNUpdate(chess.pgn())
 					if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
 					consoleLogger('Human played ' + san)
 					if (chess.in_checkmate() || chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { // end of game
@@ -302,7 +299,6 @@ async function main() {
 				
 		if (program.save) { consoleLogger('Games to be saved as .pgn files') }
 		pgnReset(true) // player is white
-		chess_pgn = getChessPGN()
 		consoleLogger('Engine ready')
 		consoleLogger('Play time!')
 		if (program.voice || program.voiceScore) {
@@ -319,7 +315,7 @@ async function main() {
 		consoleLogger("Good luck!")
 		// update connected clients
 		webBoardUpdate({ orientation: 'white',position: 'start',showNotation: false })
-		webPGNUpdate(chess_pgn)
+		webPGNUpdate(chess.pgn())
 		turn_msg = 'white to play'
 		webTurnUpdate(turn_msg)
 		webBottomPlayerUpdate(human_name)
@@ -386,17 +382,15 @@ async function main() {
 			move['to'] = result.bestmove.substr(2,2)
 			if (result.bestmove.length == 5) { move['promotion'] = result.bestmove.substr(4,1).toUpperCase() } else { move['promotion'] = '' }
 			var san = chess.move(move)['san']
-			// we can use this for additional comments, or replace completely existing function I created (as set_comment did not exist in earlier versions...)
-			//chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
+			chess.set_comment(move_info.slice(1,-1)) // insert move_info comments into pgn file
 			if (chess.history().length == 1 ) { // first move
 				pgn_file = getDateTime()+'.pgn'
 			}
 			if ((human_colour == 'white') && (chess.in_checkmate())) {chess.header('Result', '0-1') }
 			if ((human_colour == 'black') && (chess.in_checkmate())) {chess.header('Result', '1-0') }
 			if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) { chess.header('Result', '1/2-1/2') }
-			chess_pgn = getChessPGN()
-			pgnSave(pgn_file, chess_pgn)
-			webPGNUpdate(chess_pgn)
+			pgnSave(pgn_file)
+			webPGNUpdate(chess.pgn())
 			if (human_colour == 'white') { webBoardUpdate({ orientation: 'white',position: chess.fen(),showNotation: false }) } else { webBoardUpdate({ orientation: 'black',position: chess.fen(),showNotation: false }) }
 			// check score
 			if (score_unit == 'cp' || score_unit == 'mate') { consoleLogger('Engine played ' + san + ' ' + move_info) }
@@ -450,26 +444,6 @@ async function main() {
 					}
 				})
 			}
-		}
-		
-		function getChessPGN() {
-			// also insert 'move_info_array' into pgn game
-			var new_pgn = chess.pgn()
-			var nbr_moves = Math.round(chess.history().length/2)
-			for (move_nbr = 1; move_nbr <= nbr_moves; move_nbr++) {
-				if ((human_colour == 'white') && (nbr_moves == chess.history().length/2)) {	// insert into black move
-					var move_str_B = ' ' + chess.history()[move_nbr*2-1]
-					var move_str_W = move_nbr + '. ' + chess.history()[move_nbr*2-2]
-					var i = new_pgn.search(move_nbr + '. ' + chess.history()[move_nbr*2-2] + ' ' + chess.history()[move_nbr*2-1])
-					new_pgn = new_pgn.slice(0, i + move_str_W.length + move_str_B.length) + ' ' + move_info_array[move_nbr-1] + new_pgn.slice(i + move_str_W.length + move_str_B.length)
-				}
-				if ((human_colour == 'black') && (nbr_moves != chess.history().length/2)) {	// insert into white move
-					var move_str_W = move_nbr + '. ' + chess.history()[move_nbr*2-2]
-					var i = new_pgn.search(move_nbr + '. ' + chess.history()[move_nbr*2-2])
-					new_pgn = new_pgn.slice(0, i + move_str_W.length) + ' ' + move_info_array[move_nbr-1] + new_pgn.slice(i + move_str_W.length)
-				}
-			}
-			return new_pgn
 		}
 		
 		function webBoardUpdate(data) {
@@ -716,7 +690,7 @@ async function main() {
 			// initial data sent over to this new connection only
 			socket.emit('server-to-client-console-data', message_log) // console
 			socket.emit('server-to-client-turn-data', turn_msg) // turn
-			socket.emit('server-to-client-pgn-data', chess_pgn) // pgn
+			socket.emit('server-to-client-pgn-data', chess.pgn()) // pgn
 			socket.emit('server-to-client-bottom_player-data', human_name) // bottom player
 			socket.emit('server-to-client-top_player-data', engine_name) // top player
 			if (human_colour == 'white') { 
