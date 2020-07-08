@@ -68,7 +68,8 @@ if (program.web) {
 	app.use(express.static(__dirname));
 	router.get('/', (req, res) => res.sendFile('chessboard/medusa.html'))
 	http.listen(web_port, function(){ 
-		console.log(now_formatted + 'Live webpage activated at \'http://localhost:' + web_port + '/chessboard/medusa.html\'')
+		if (web_port == 80) {host_str = "localhost"} else {host_str = "localhost:" + web_port}
+                console.log(now_formatted + 'Live webpage activated at \'http://' + host_str + '/chessboard/medusa.html\'')
 	})
 }	
 
