@@ -5,7 +5,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-const version = "2.1.0"
+const version = "2.2.0"
 const program = require('commander')
 const fs = require('fs')
 const ini = require('ini')
@@ -190,10 +190,16 @@ async function main() {
 					move['from'] = board_received.substr(0,2)
 					move['to'] = board_received.substr(2,2)						
 					if ((chess.get(move['from']).type == 'p') && (board_received.substr(2,2).substr(1,1) == '8')) { //promotion
-						const ans = await askQuestion("Enter promotion piece [q|b|k|r]: ");
-						playText("enter-promotion")
-						if ((ans.toLowerCase() != 'b') && (ans.toLowerCase() != 'k') && (ans.toLowerCase() != 'r')) ans = 'q'
-						move['promotion'] = ans.toLowerCase()
+						// let's keep the original code below in case...
+						// in order to not interrupt game flow, better to promote always to Queen
+						// also, it's a way to avoid data entry and get the whole experience automated
+						// old code:
+						//const ans = await askQuestion("Enter promotion piece [q|b|k|r]: ");
+						//playText("enter-promotion")
+						//if ((ans.toLowerCase() != 'b') && (ans.toLowerCase() != 'k') && (ans.toLowerCase() != 'r')) ans = 'q'
+						//move['promotion'] = ans.toLowerCase()
+						// new code:
+						move['promotion'] = 'q'
 					}				
 					var san = chess.move(move)['san']
 					if (chess.history().length == 1 ) { // first move
